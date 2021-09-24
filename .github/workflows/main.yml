@@ -53,7 +53,7 @@ jobs:
         with:
           file: module.json
           field: url
-          value:  "https://github.com/${{ GITHUB_REPOSITORY }}/tree/master",
+          value: 'https://github.com/${{ GITHUB_REPOSITORY }}/tree/master'
 
       # Runs a single command using the runners shell
       - name: Zip Files
