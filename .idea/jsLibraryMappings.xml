@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="JavaScriptLibraryMappings">
+    <file url="file://$PROJECT_DIR$" libraries="{dnd5e-variant-spellpoints/node_modules}" />
+    <file url="PROJECT" libraries="{Foundry Types, dnd5e-variant-spellpoints/node_modules, foundry dnd5e types}" />
+  </component>
+</project>
