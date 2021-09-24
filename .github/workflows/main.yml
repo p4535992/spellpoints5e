@@ -39,21 +39,21 @@ jobs:
         with:
           file: module.json
           field: manifest
-          value: 'https://github.com/${{ env.GITHUB_REPOSITORY }}/releases/latest/download/module.json'
+          value: https://github.com/$GITHUB_REPOSITORY/releases/latest/download/module.json
 
       - name: Update module.json download
         uses: jossef/action-set-json-field@v1
         with:
           file: module.json
           field: download
-          value: 'https://github.com/${{ env.GITHUB_REPOSITORY }}/releases/latest/download/module.zip'
+          value: https://github.com/$GITHUB_REPOSITORY/releases/latest/download/module.zip
 
       - name: Update module.json url
         uses: jossef/action-set-json-field@v1
         with:
           file: module.json
           field: url
-          value: 'https://github.com/${{ env.GITHUB_REPOSITORY }}/tree/master'
+          value: https://github.com/$GITHUB_REPOSITORY/tree/master'
 
       # Runs a single command using the runners shell
       - name: Zip Files
