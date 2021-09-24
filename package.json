@@ -14,12 +14,12 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/Mary-Usagi/accidental-item-deletion-preventer.git"
+    "url": "git+https://github.com/Mary-Usagi/dnd5e-variant-spellpoints.git"
   },
   "author": "",
   "license": "ISC",
   "bugs": {
-    "url": "https://github.com/Mary-Usagi/accidental-item-deletion-preventer/issues"
+    "url": "https://github.com/Mary-Usagi/dnd5e-variant-spellpoints/issues"
   },
-  "homepage": "https://github.com/Mary-Usagi/accidental-item-deletion-preventer#readme"
+  "homepage": "https://github.com/Mary-Usagi/dnd5e-variant-spellpoints#readme"
 }
