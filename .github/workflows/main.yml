@@ -27,6 +27,7 @@ jobs:
       - id: get_version
         uses: battila7/get-version-action@v2
 
+      # Updates fields in the module.json, TODO: replace with a better version
       - name: Update module.json version
         uses: jossef/action-set-json-field@v1
         with:
@@ -55,11 +56,12 @@ jobs:
           field: url
           value: https://github.com/${{ github.repository }}/tree/master'
 
-      # Runs a single command using the runners shell
+      # Create a zip file with all files required by the module to add to the release
       - name: Zip Files
         working-directory: ./
         run: zip -r ./module.zip ./scripts/* ./lang/* ./templates/* ./styles/* ./module.json ./LICENSE ./README.md
 
+      # Create a release for this specific version
       - name: Create Release
         id: create-release
         uses: ncipollo/release-action@v1
