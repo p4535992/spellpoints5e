@@ -396,6 +396,7 @@ Hooks.once('ready', () => {
     console.log('dnd5e-variant-spellpoints | Initializing module')
     VSpellPoints.initialize();
 
+    // TODO: find better place for the functions
     // ignore non player characters
     function isCharacter(actor) {
         if (actor.data?.type !== "character") {
@@ -599,6 +600,7 @@ Hooks.once('ready', () => {
             })
     })
 
+    // TODO: use libwrapper
     // Monkey patch the long rest function so it resets the spell points
     // TODO: Maybe only add a hook call and handle it by myself
     let oldRestSpellRecovery = game.dnd5e.entities.Actor5e.prototype._getRestSpellRecovery;

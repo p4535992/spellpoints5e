@@ -18,5 +18,11 @@ This module implements the [Variant Spell Points Rule](https://www.dndbeyond.com
 In the setup screen, use the URL https://github.com/Mary-Usagi/dnd5e-variant-spellpoints/releases/latest/download/module.json to install the module.
 
 ## TODO
-Test with other modules:
-* Combat HUD
+Compatability with other modules:
+
+* <b>Combat HUD</b>
+  - Works, but doesn't show spell points or uses on HUD
+    
+    Ideas: 
+    - Replace spell slot indicator below spells with `spellpoint cost / remaining spellpoints`
+    - Use Spell slot indicator for remaining uses for 6th level and higher spells
