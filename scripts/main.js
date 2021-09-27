@@ -19,15 +19,14 @@ class VSpellPoints {
         // Register a world setting
         const debouncedReload = foundry.utils.debounce(window.location.reload, 100);
 
-        // TODO: fix reload
+        // TODO: fix reload (onchange)
         game.settings.register(this.ID, this.SETTINGS.TOGGLEON, {
             name: "Use Variant: Spell Points? ",
             hint: `Use Spell Points instead of Slots, as described in the Dungeon Master's Guide. Replaces parts of the "spell book" in the character sheet. `,
             scope: "world",      // This specifies a world-level setting
             config: true,        // This specifies that the setting appears in the configuration view
             default: false,      // The default value for the setting
-            type: Boolean,
-            onChange: debouncedReload,
+            type: Boolean
         });
     }
 }
@@ -390,7 +389,6 @@ class VSpellPointsCalcs {
     }
 }
 
-
 /**
  * Once the game has initialized, set up our module
  */
@@ -398,19 +396,63 @@ Hooks.once('ready', () => {
     console.log('dnd5e-variant-spellpoints | Initializing module')
     VSpellPoints.initialize();
 
+    // ignore non player characters
+    function isCharacter(actor) {
+        if (actor.data?.type !== "character") {
+            console.log("dnd5e-variant-spellpoints | Actor is not a player")
+            return false
+        }
+        return true
+    }
+
+    // ignore non-spellcasters
+    function isSpellcaster(actor) {
+        let classes = actor?.data?.data?.classes;
+        if (!classes) {
+            console.log("dnd5e-variant-spellpoints | Actor is not a spellcaster")
+            return false;
+        }
+
+        let isCaster = VSpellPointsCalcs.getCombinedSpellCastingLevel(classes) > 0;
+        if (!isCaster) {
+            console.log("dnd5e-variant-spellpoints | Actor is not a spellcaster")
+            return false
+        }
+
+        return true
+    }
+
+    // ignore warlock (TODO: for now)
+    function isWarlock(actor) {
+        if (!(actor?.data?.data?.classes)) {
+            return false
+        }
+
+        if ('warlock' in actor.data.data.classes) {
+            console.log("dnd5e-variant-spellpoints | Actor is a Warlock (Will be ignored for now)")
+            return true;
+        }
+    }
+
+    // check if module was enabled in the settings
+    function isModuleEnabled() {
+        const useModule = game.settings.get(VSpellPoints.ID,VSpellPoints.SETTINGS.TOGGLEON);
+        if (!useModule) {
+            console.log('dnd5e-variant-spellpoints | Variant Spellpoints not used')
+            return false;
+        }
+        return true
+    }
+
     // modify actorsheet after its rendered to show the spell points
     Hooks.on("renderActorSheet5e", (actorsheet, html, _options) => {
         // prevent execution if variant is disabled
         // TODO: warlock
-        const useModule = game.settings.get(VSpellPoints.ID,VSpellPoints.SETTINGS.TOGGLEON);
-        if (!useModule) {
-            console.log('dnd5e-variant-spellpoints | Not used 1')
-            return;
-        }
-
+        if (!isModuleEnabled()) return;
         console.log(actorsheet)
 
         let actor = actorsheet.object;
+        if (!isCharacter(actor)) return;
 
         // initialize spellpoints data in the actor, if not yet present
         const {defaultPoints, defaultUses} = VSpellPointsData.initPoints(actor)
@@ -420,94 +462,78 @@ Hooks.once('ready', () => {
         // try to set the initial spellpoint values if they are not yet there
         // VariantSpellPointsData.initUserSpellPoints(actor)
 
-        let classes = actor.data.data.classes;
+        if (isWarlock(actor) || !isSpellcaster(actor)) return;
 
-        let isCaster = VSpellPointsCalcs.getCombinedSpellCastingLevel(classes) > 0;
+        // change header of sheet
+        console.log("It's a caster! - Level " + VSpellPointsCalcs.getCombinedSpellCastingLevel(actor.data.data.classes))
+        let attributesList = html.find(".sheet-header").find(".attributes")
 
-        if (isCaster) {
-            // change header of sheet
-            console.log("It's a caster! - Level " + VSpellPointsCalcs.getCombinedSpellCastingLevel(classes))
-            let attributesList = html.find(".sheet-header").find(".attributes")
+        let savedPointData = VSpellPointsData.getPoints(actor) ?? {}
+        let savedUsesData = VSpellPointsData.getUses(actor) ?? {}
 
-            let savedPointData = VSpellPointsData.getPoints(actor) ?? {}
-            let savedUsesData = VSpellPointsData.getUses(actor) ?? {}
+        let pointData = foundry.utils.isObjectEmpty(savedPointData) ? defaultPoints : savedPointData;
+        let usesData = foundry.utils.isObjectEmpty(savedUsesData) ? defaultUses : savedUsesData;
 
-            let pointData = foundry.utils.isObjectEmpty(savedPointData) ? defaultPoints : savedPointData;
-            let usesData = foundry.utils.isObjectEmpty(savedUsesData) ? defaultUses : savedUsesData;
+        console.log("Using pointData: ", pointData)
+        console.log("Using usesData: ", usesData)
 
-            console.log("Using pointData: ", pointData)
-            console.log("Using usesData: ", usesData)
+        let spellPointsAttribute = VSpellPointsCalcs.createSpellPointsInfo(actor, pointData, actorsheet);
+        let newAttribute = attributesList.append(spellPointsAttribute)
 
-            let spellPointsAttribute = VSpellPointsCalcs.createSpellPointsInfo(actor, pointData, actorsheet);
-            let newAttribute = attributesList.append(spellPointsAttribute)
+        // activate all listeners for the new html
+        actorsheet.activateListeners($(newAttribute).find(".spellpoints"))
 
-            // activate all listeners for the new html
-            actorsheet.activateListeners($(newAttribute).find(".spellpoints"))
+        // change the slot info to spell point cost and remaining spell points
+        let itemsHeader = html.find(".tab.spellbook").find(".items-header.spellbook-header")
 
-            // change the slot info to spell point cost and remaining spell points
-            let itemsHeader = html.find(".tab.spellbook").find(".items-header.spellbook-header")
-            itemsHeader
-                .find(".spell-slots")
-                .each( function(i) {
-                    let newSlotInfo = `
-                        <span> ${VSpellPointsCalcs.spellPointCost[i]} </span>
+        itemsHeader
+            .find(".spell-slots")
+            .each( function(i) {
+                let newSlotInfo = `
+                    <span> ${VSpellPointsCalcs.spellPointCost[i]} </span>
+                    <span class="sep"> / </span>
+                    <span class="spell-max">${pointData.currentPoints ?? 0} P</span>`
+
+                // ignore cantrips
+                if (i === 0) newSlotInfo = " - "
+
+                $(this).attr('title', 'cost / remaining spell points');
+                $(this).html(newSlotInfo)
+            });
+
+        itemsHeader
+            .find("h3")
+            .each( function(i) {
+                // ignore spells below 6th level
+                if (i < 6) return true;
+
+                // TODO: remove space between level and uses
+                let spellStr = `spell${i}`
+                let usesInfo = `
+                    <div class="spell-slots" title="remaining uses" style="display: block; ">
+                        (<input type="text" 
+                                name="flags.${VSpellPoints.ID}.${VSpellPoints.FLAGS.USES}.${spellStr}.value" 
+                                value="${usesData[spellStr].value}" placeholder="0" 
+                                data-dtype="Number">
                         <span class="sep"> / </span>
-                        <span class="spell-max">${pointData.currentPoints ?? 0} P</span>`
+                        <span class="spell-max">
+                            ${usesData[spellStr].max}
+                        </span>)
+                    </div><div class="flex-gap" style="display: inline-flex; flex-wrap: wrap"></div><div class="flex-gap" style="display: inline-flex; flex-wrap: wrap"></div>`
+                $(this).after(usesInfo);
+            });
 
-                    // ignore cantrips
-                    if (i === 0) newSlotInfo = " - "
-
-                    $(this).attr('title', 'cost / remaining spell points');
-                    $(this).html(newSlotInfo)
-                });
-
-            itemsHeader
-                .find("h3")
-                .each( function(i) {
-                    // ignore spells below 6th level
-                    if (i < 6) return true;
-
-                    // TODO: remove space between level and uses
-                    let spellStr = `spell${i}`
-                    let usesInfo = `
-                        <div class="spell-slots" title="remaining uses" style="display: block; ">
-                            (<input type="text" 
-                                    name="flags.${VSpellPoints.ID}.${VSpellPoints.FLAGS.USES}.${spellStr}.value" 
-                                    value="${usesData[spellStr].value}" placeholder="0" 
-                                    data-dtype="Number">
-                            <span class="sep"> / </span>
-                            <span class="spell-max">
-                                ${usesData[spellStr].max}
-                            </span>)
-                        </div><div class="flex-gap" style="display: inline-flex; flex-wrap: wrap"></div><div class="flex-gap" style="display: inline-flex; flex-wrap: wrap"></div>`
-                    $(this).after(usesInfo);
-                });
-
-            // apply listeners (from:Actor5e - actorsheet.activateListeners(html))
-            // const inputs = itemsHeader.find("input");
-            // inputs.focus(ev => ev.currentTarget.select());
-            // inputs.addBack().find('[data-dtype="Number"]').change(this._onChangeInputDelta.bind(this));
-
-            // make the sheet a little wider by default
-            // actorsheet.setPosition({width: actorsheet.options.width + 50})
-            $(html).css("min-width", `${actorsheet.options.width + 50}px`)
-
-
-        } else {
-            console.log("Boooo, no caster.")
-        }
+        // make the sheet a little wider by default
+        // TODO: still looks a little weird sometimes, needs fixing
+        // actorsheet.setPosition({width: actorsheet.options.width + 50})
+        $(html).css("min-width", `${actorsheet.options.width + 50}px`)
     });
 
     Hooks.on("renderLongRestDialog", (dialog, html, options) => {
         // prevent execution if variant is disabled
-        // TODO: warlock
+        if (!isModuleEnabled()) return;
 
-        const useModule = game.settings.get(VSpellPoints.ID,VSpellPoints.SETTINGS.TOGGLEON);
-        if (!useModule) {
-            console.log('dnd5e-variant-spellpoints | Not used 2')
-            return;
-        }
-
+        // TODO: Sachen nicht von text abhängig machen
         let text = $(html).find(".dialog-content").children("p").text().replace('spell slots', 'spell points');
         $(html).find(".dialog-content").children("p").text(text);
     })
@@ -516,20 +542,23 @@ Hooks.once('ready', () => {
     // replace the spell slot reminder in the ability use dialog
     Hooks.on("renderAbilityUseDialog", (dialog, html, object) => {
         // prevent execution if variant is disabled
-        // TODO: warlock
-        const useModule = game.settings.get(VSpellPoints.ID,VSpellPoints.SETTINGS.TOGGLEON);
-        if (!useModule) {
-            console.log('dnd5e-variant-spellpoints | Not used 3')
-            return;
-        }
+        if (!isModuleEnabled()) return;
+
+        console.log(dialog, html, object)
+        let item = dialog.item
+        let actor = item.parent;
+
+        if (isWarlock(actor) || !isCharacter(actor) || !isSpellcaster(actor)) return;
+
+        // TODO: Show red warning box if it can't be cast
 
         // only apply on spells
-        if (dialog.item?.data?.type !== "spell") {
+        if (item?.data?.type !== "spell") {
             console.log("not using a spell")
             return;
         }
+
         console.log(dialog, html, object)
-        let actor = dialog.item.parent;
         let usesData = VSpellPointsData.getUses(actor)
         let pointData = VSpellPointsData.getPoints(actor)
 
@@ -571,14 +600,11 @@ Hooks.once('ready', () => {
     })
 
     // Monkey patch the long rest function so it resets the spell points
-    // TODO: Maybe only add a hook and handle it by myself
+    // TODO: Maybe only add a hook call and handle it by myself
     let oldRestSpellRecovery = game.dnd5e.entities.Actor5e.prototype._getRestSpellRecovery;
     game.dnd5e.entities.Actor5e.prototype._getRestSpellRecovery = function({ recoverPact=true, recoverSpells=true }) {
-        // use normal function if variant is disabled
-        // TODO: warlock
-        const useModule = game.settings.get(VSpellPoints.ID,VSpellPoints.SETTINGS.TOGGLEON);
-        if (!useModule) {
-            console.log('dnd5e-variant-spellpoints | Not used 4')
+        // use normal function if variant is disabled or because of other factors
+        if (!isModuleEnabled() || isWarlock(this) || !isCharacter(this) || !isSpellcaster(this)) {
             return oldRestSpellRecovery.apply(this, arguments);;
         }
 
@@ -607,20 +633,17 @@ Hooks.once('ready', () => {
     // TODO: Maybe only add a hook and handle it by myself
     let oldUsageUpdate = game.dnd5e.entities.Item5e.prototype._getUsageUpdates;
     game.dnd5e.entities.Item5e.prototype._getUsageUpdates = function({consumeQuantity, consumeRecharge, consumeResource, consumeSpellLevel, consumeUsage}) {
-        // use normal function if variant is disabled
-        // TODO: warlock
-        // TODO: NPC's?
+        let actor = this.parent;
 
-        const useModule = game.settings.get(VSpellPoints.ID,VSpellPoints.SETTINGS.TOGGLEON);
-
-        // do default behaviour if no spell level is used or module is deactivated TODO: or warlock
-        // return oldUsageUpdate.apply(this, [{consumeQuantity, consumeRecharge, consumeResource, consumeSpellLevel, consumeUsage}]);
-        if (!consumeSpellLevel || !useModule) {
-            console.log('dnd5e-variant-spellpoints | Not used 5')
-            return oldUsageUpdate.apply(this, [{consumeQuantity, consumeRecharge, consumeResource, consumeSpellLevel, consumeUsage}]);
+        // use normal function if variant is disabled or because of other factors
+        // do default behaviour if no spell level is used or module is deactivated
+        if (!isModuleEnabled() || !consumeSpellLevel || isWarlock(actor) || !isCharacter(actor) || !isSpellcaster(actor)) {
+            return oldUsageUpdate.apply(this, arguments);
         }
 
-        // otherwise do custom behaviour
+        // TODO: Warlock exceptions for pact spells, pact slots, etc.
+        const castMode = this.data?.data?.preparation?.mode
+        const isPactMagic = castMode === "pact"
 
         // get the spell level that is being cast
         let spellLevelStr = consumeSpellLevel;
@@ -633,7 +656,6 @@ Hooks.once('ready', () => {
 
         console.log(oldUpdate)
 
-        let actor = this.parent;
         let actorSpellpoints = VSpellPointsData.getPoints(actor);
         let actorSpellUses = VSpellPointsData.getUses(actor);
 
