@@ -1,4 +1,4 @@
-> :warning: **ALPHA VERSION - STILL HAS LOTS OF BUGS**: Only use on testing setups!
+> :warning: **ALPHA VERSION - PROBABLY STILL HAS LOTS OF BUGS**: Only use on testing setups!
 
 # Variant Spells Rule for dnd5e
 
@@ -18,9 +18,11 @@ This module implements the [Variant Spell Points Rule](https://www.dndbeyond.com
 In the setup screen, use the URL https://github.com/Mary-Usagi/dnd5e-variant-spellpoints/releases/latest/download/module.json to install the module.
 
 ## TODO
-Compatability with other modules:
+### Localization
 
-* <b>Combat HUD</b>
+### Compatability with other modules:
+
+* Combat HUD
   - Works, but doesn't show spell points or uses on HUD
     
     Ideas: 
