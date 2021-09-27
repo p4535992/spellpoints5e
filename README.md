@@ -1,3 +1,5 @@
+> :warning: **ALPHA VERSION - STILL HAS LOTS OF BUGS**: Only use on testing setups!
+
 # Variant Spells Rule for dnd5e
 
 This module implements the [Variant Spell Points Rule](https://www.dndbeyond.com/sources/dmg/dungeon-masters-workshop#VariantSpellPoints) as described in the Dungeon Master's Guide. 
