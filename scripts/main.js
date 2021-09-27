@@ -467,6 +467,7 @@ Hooks.once('ready', () => {
                     // ignore spells below 6th level
                     if (i < 6) return true;
 
+                    // TODO: remove space between level and uses
                     let spellStr = `spell${i}`
                     let usesInfo = `
                         <div class="spell-slots" title="remaining uses" style="display: block; ">
@@ -608,6 +609,7 @@ Hooks.once('ready', () => {
     game.dnd5e.entities.Item5e.prototype._getUsageUpdates = function({consumeQuantity, consumeRecharge, consumeResource, consumeSpellLevel, consumeUsage}) {
         // use normal function if variant is disabled
         // TODO: warlock
+        // TODO: NPC's?
 
         const useModule = game.settings.get(VSpellPoints.ID,VSpellPoints.SETTINGS.TOGGLEON);
 
