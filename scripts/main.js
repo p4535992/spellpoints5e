@@ -29,6 +29,16 @@ class VSpellPoints {
             type: Boolean
         });
     }
+
+    /* https://github.com/League-of-Foundry-Developers/foundryvtt-devMode */
+    static log(...args) {
+        try {
+            const isDebugging = game.modules.get('_dev-mode')?.api?.getPackageDebugValue(this.ID);
+            if (isDebugging) {
+                console.log(this.ID, '|', ...args);
+            }
+        } catch (e) {}
+    }
 }
 
 
@@ -107,8 +117,8 @@ class VSpellPointsData {
     static initPoints(actor) {
         let actorSpellPoints = this.getPoints(actor);
         let actorUses = this.getUses(actor)
-        console.log(actorSpellPoints)
-        console.log(actorUses)
+        VSpellPoints.log(actorSpellPoints)
+        VSpellPoints.log(actorUses)
         let isNotPresent = !actorSpellPoints ||
             !actorUses ||
             (actorSpellPoints && Object.keys(actorSpellPoints).length === 0) ||
@@ -146,13 +156,13 @@ class VSpellPointsData {
 
         } else if (actorSpellPoints.maxPoints !== points || actorSpellPoints.maxSpellLevel !== level) {
             // TODO (maybe): Put into update actor hook
-            console.log(`${VSpellPoints.ID} | Updating spell points data for: ${actor.name}`)
+            VSpellPoints.log(`${VSpellPoints.ID} | Updating spell points data for: ${actor.name}`)
 
             updatePoints = {
                 maxPoints: points,
                 maxSpellLevel: level
             }
-            console.log(updatePoints)
+            VSpellPoints.log(updatePoints)
 
 
             updateUses = {
@@ -165,12 +175,12 @@ class VSpellPointsData {
             for (let j = 6; j <= level; j++) {
                 updateUses[`spell${j}`].max = 1
             }
-            console.log(updateUses)
+            VSpellPoints.log(updateUses)
 
             actor.setFlag(VSpellPoints.ID, VSpellPoints.FLAGS.POINTS, updatePoints);
             actor.setFlag(VSpellPoints.ID, VSpellPoints.FLAGS.USES, updateUses);
         } else {
-            console.log(`${VSpellPoints.ID} | Nothing to do`)
+            VSpellPoints.log(`${VSpellPoints.ID} | Nothing to do`)
         }
 
         // return default values
@@ -385,6 +395,10 @@ class VSpellPointsCalcs {
     }
 }
 
+Hooks.once('devModeReady', ({ registerPackageDebugFlag }) => {
+    registerPackageDebugFlag(VSpellPoints.ID);
+});
+
 /**
  * Once the game has initialized, set up our module
  */
@@ -396,7 +410,7 @@ Hooks.once('ready', () => {
     // chekc if actor is a player character
     function isCharacter(actor) {
         if (actor.data?.type !== "character") {
-            console.log("dnd5e-variant-spellpoints | Actor is not a player")
+            VSpellPoints.log("Actor is not a player")
             return false
         }
         return true
@@ -406,13 +420,13 @@ Hooks.once('ready', () => {
     function isSpellcaster(actor) {
         let classes = actor?.data?.data?.classes;
         if (!classes) {
-            console.log("dnd5e-variant-spellpoints | Actor is not a spellcaster")
+            VSpellPoints.log("Actor is not a spellcaster")
             return false;
         }
 
         let isCaster = VSpellPointsCalcs.getCombinedSpellCastingLevel(classes) > 0;
         if (!isCaster) {
-            console.log("dnd5e-variant-spellpoints | Actor is not a spellcaster")
+            VSpellPoints.log("Actor is not a spellcaster")
             return false
         }
 
@@ -426,7 +440,7 @@ Hooks.once('ready', () => {
         }
 
         if ('warlock' in actor.data.data.classes) {
-            console.log("dnd5e-variant-spellpoints | Actor is a Warlock (Will be ignored for now)")
+            VSpellPoints.log("Actor is a Warlock (Will be ignored for now)")
             return true;
         }
     }
@@ -435,7 +449,7 @@ Hooks.once('ready', () => {
     function isModuleEnabled() {
         const useModule = game.settings.get(VSpellPoints.ID,VSpellPoints.SETTINGS.TOGGLEON);
         if (!useModule) {
-            console.log('dnd5e-variant-spellpoints | Variant Spellpoints not used')
+            VSpellPoints.log('Variant Spellpoints not used')
             return false;
         }
         return true
@@ -443,7 +457,7 @@ Hooks.once('ready', () => {
 
     // modify actorsheet after its rendered to show the spell points
     Hooks.on("renderActorSheet5e", (actorsheet, html, _options) => {
-        console.log("RENDER", actorsheet, html, _options)
+        VSpellPoints.log("RENDER", actorsheet, html, _options)
 
         // prevent execution if variant is disabled
         if (!isModuleEnabled()) return;
@@ -454,16 +468,16 @@ Hooks.once('ready', () => {
         // initialize spellpoints data in the actor, if not yet present
         const {defaultPoints, defaultUses} = VSpellPointsData.initPoints(actor)
 
-        console.log("++++++++++++++++++")
-        console.log("render actorsheet", actorsheet)
-        console.log("renderActor: ", foundry.utils.deepClone(actor))
+        VSpellPoints.log("++++++++++++++++++")
+        VSpellPoints.log("render actorsheet", actorsheet)
+        VSpellPoints.log("renderActor: ", foundry.utils.deepClone(actor))
 
         // removes non spellcasters and single-class warlocks
-        console.log("Render Sheet: warlock, spellcaster:", isWarlock(actor), isSpellcaster(actor))
+        VSpellPoints.log("Render Sheet: warlock, spellcaster:", isWarlock(actor), isSpellcaster(actor))
         if (!isSpellcaster(actor)) return;
 
         // change header of sheet
-        console.log("It's a caster! - Level " + VSpellPointsCalcs.getCombinedSpellCastingLevel(actor.data.data.classes))
+        VSpellPoints.log("It's a caster! - Level " + VSpellPointsCalcs.getCombinedSpellCastingLevel(actor.data.data.classes))
         let attributesList = html.find(".sheet-header").find(".attributes")
 
         let savedPointData = VSpellPointsData.getPoints(actor) ?? {}
@@ -472,8 +486,8 @@ Hooks.once('ready', () => {
         let pointData = foundry.utils.isObjectEmpty(savedPointData) ? defaultPoints : savedPointData;
         let usesData = foundry.utils.isObjectEmpty(savedUsesData) ? defaultUses : savedUsesData;
 
-        console.log("Using pointData: ", pointData)
-        console.log("Using usesData: ", usesData)
+        VSpellPoints.log("Using pointData: ", pointData)
+        VSpellPoints.log("Using usesData: ", usesData)
 
         let spellPointsAttribute = VSpellPointsCalcs.createSpellPointsInfo(actor, pointData, actorsheet);
         let newAttribute = attributesList.append(spellPointsAttribute)
@@ -553,11 +567,11 @@ Hooks.once('ready', () => {
         // prevent execution if variant is disabled
         if (!isModuleEnabled()) return;
 
-        console.log(dialog, html, object)
+        VSpellPoints.log(dialog, html, object)
         let item = dialog.item
         let actor = item.parent;
 
-        console.log("Render Ability Use: warlock, spellcaster:", isWarlock(actor), isSpellcaster(actor))
+        VSpellPoints.log("Render Ability Use: warlock, spellcaster:", isWarlock(actor), isSpellcaster(actor))
         // filters out npcs, non spellcasters and single-class warlocks
         if (!isCharacter(actor) || !isSpellcaster(actor)) return;
 
@@ -565,11 +579,11 @@ Hooks.once('ready', () => {
 
         // only apply on spells
         if (item?.data?.type !== "spell") {
-            console.log("not using a spell")
+            VSpellPoints.log("not using a spell")
             return;
         }
 
-        console.log(dialog, html, object)
+        VSpellPoints.log(dialog, html, object)
         let usesData = VSpellPointsData.getUses(actor)
         let pointData = VSpellPointsData.getPoints(actor)
 
@@ -629,7 +643,7 @@ Hooks.once('ready', () => {
     let oldRestSpellRecovery = game.dnd5e.entities.Actor5e.prototype._getRestSpellRecovery;
     game.dnd5e.entities.Actor5e.prototype._getRestSpellRecovery = function({ recoverPact=true, recoverSpells=true }) {
         // use normal function if variant is disabled or because of other factors
-        console.log("_getRestSpellRecovery: warlock, spellcaster", isWarlock(this), isSpellcaster(this))
+        VSpellPoints.log("_getRestSpellRecovery: warlock, spellcaster", isWarlock(this), isSpellcaster(this))
         if (!isModuleEnabled() || !isCharacter(this) || !isSpellcaster(this)) {
             return oldRestSpellRecovery.apply(this, arguments);;
         }
@@ -647,7 +661,7 @@ Hooks.once('ready', () => {
             oldUpdate[`flags.${VSpellPoints.ID}.${VSpellPoints.FLAGS.POINTS}.${VSpellPointsData.vars.tempMax}`] = 0
             // reset uses for over 6th level spells
             Object.entries(actorUses).forEach( ([spellLevel, data]) => {
-                console.log(`flags.${VSpellPoints.ID}.${VSpellPoints.FLAGS.USES}.${spellLevel}.value`, data.max)
+                VSpellPoints.log(`flags.${VSpellPoints.ID}.${VSpellPoints.FLAGS.USES}.${spellLevel}.value`, data.max)
                 oldUpdate[`flags.${VSpellPoints.ID}.${VSpellPoints.FLAGS.USES}.${spellLevel}.value`] = data.max
             })
 
@@ -661,10 +675,10 @@ Hooks.once('ready', () => {
     game.dnd5e.entities.Item5e.prototype._getUsageUpdates = function({consumeQuantity, consumeRecharge, consumeResource, consumeSpellLevel, consumeUsage}) {
         let actor = this.parent;
 
-        console.log("_getUsageUpdates", {consumeQuantity, consumeRecharge, consumeResource, consumeSpellLevel, consumeUsage}, this)
+        VSpellPoints.log("_getUsageUpdates", {consumeQuantity, consumeRecharge, consumeResource, consumeSpellLevel, consumeUsage}, this)
         // use normal function if variant is disabled or because of other factors
         // do default behaviour if no spell level is used or module is deactivated
-        console.log("_getUsageUpdates: warlock, spellcaster, consumeSpellLevel:", isWarlock(actor), isSpellcaster(actor), consumeSpellLevel)
+        VSpellPoints.log("_getUsageUpdates: warlock, spellcaster, consumeSpellLevel:", isWarlock(actor), isSpellcaster(actor), consumeSpellLevel)
         if (!isModuleEnabled() || !consumeSpellLevel || !isCharacter(actor) || !isSpellcaster(actor)) {
             return oldUsageUpdate.apply(this, arguments);
         }
@@ -684,7 +698,7 @@ Hooks.once('ready', () => {
         // call normal spell recovery
         let oldUpdate = oldUsageUpdate.apply(this, [{consumeQuantity, consumeRecharge, consumeResource, consumeSpellLevel, consumeUsage}]);
 
-        console.log(oldUpdate)
+        VSpellPoints.log(oldUpdate)
 
         let actorSpellpoints = VSpellPointsData.getPoints(actor);
         let actorSpellUses = VSpellPointsData.getUses(actor);
@@ -697,18 +711,18 @@ Hooks.once('ready', () => {
 
         // get point cost of spell level
         let spellCost = VSpellPointsCalcs.spellPointCost[spellLevel]
-        console.log("spelllevel: " + spellLevel)
-        console.log("spellCost: " + spellCost)
-        console.log("currentPoint: " + actorSpellpoints.currentPoints)
-        console.log("maxSpellLevel: " + actorSpellpoints.maxSpellLevel)
-        if (spellLevel >= usesSpellLevel) console.log(`usesRemaining-${spellLevelStr}: ` + actorSpellUses[spellLevelStr].value)
+        VSpellPoints.log("spelllevel: " + spellLevel)
+        VSpellPoints.log("spellCost: " + spellCost)
+        VSpellPoints.log("currentPoint: " + actorSpellpoints.currentPoints)
+        VSpellPoints.log("maxSpellLevel: " + actorSpellpoints.maxSpellLevel)
+        if (spellLevel >= usesSpellLevel) VSpellPoints.log(`usesRemaining-${spellLevelStr}: ` + actorSpellUses[spellLevelStr].value)
 
         // error if no or not enough spell points are left, or if level is too high, or if uses remaining
         let currentNotOk = !spellCost || !actorSpellpoints.currentPoints || actorSpellpoints.currentPoints < spellCost
         let spellLevelNotOk = !spellLevel || !actorSpellpoints.maxSpellLevel || spellLevel > actorSpellpoints.maxSpellLevel
         let noUsesRemaining = spellLevel >= usesSpellLevel ? actorSpellUses[spellLevelStr].value === 0 : false
 
-        console.log(`Enough points: ${!currentNotOk}, level ok: ${!spellLevelNotOk}, uses ok: ${!noUsesRemaining}`)
+        VSpellPoints.log(`Enough points: ${!currentNotOk}, level ok: ${!spellLevelNotOk}, uses ok: ${!noUsesRemaining}`)
 
         // show error
         const id = this.data.data;
