@@ -21,7 +21,7 @@ In the setup screen, use the URL https://github.com/Mary-Usagi/dnd5e-variant-spe
 ### Localization
 
 ### Compatability with other modules:
-
+* Settings to adjust spell costs and max points per level (GM only) 
 * Combat HUD
   - Works, but doesn't show spell points or uses on HUD
     
