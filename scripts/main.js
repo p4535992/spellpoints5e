@@ -652,7 +652,7 @@ Hooks.once('ready', () => {
         // use normal function if variant is disabled or because of other factors
         VSpellPoints.log("_getRestSpellRecovery: warlock, spellcaster", isWarlock(this), isSpellcaster(this))
         if (!isModuleEnabled() || !isCharacter(this) || !isSpellcaster(this)) {
-            return oldRestSpellRecovery.apply(this, arguments);;
+            return oldRestSpellRecovery.apply(this, arguments);
         }
 
         // call normal spell recovery
