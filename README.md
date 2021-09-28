@@ -18,10 +18,9 @@ This module implements the [Variant Spell Points Rule](https://www.dndbeyond.com
 In the setup screen, use the URL https://github.com/Mary-Usagi/dnd5e-variant-spellpoints/releases/latest/download/module.json to install the module.
 
 ## TODO
-### Localization
-
-### Compatability with other modules:
-* Settings to adjust spell costs and max points per level (GM only) 
+### - Settings to adjust spell costs and max points per level (GM only)
+### - Localization
+### - Compatability with other modules:
 * Combat HUD
   - Works, but doesn't show spell points or uses on HUD
     
