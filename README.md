@@ -4,12 +4,12 @@
 
 This module implements the [Variant Spell Points Rule](https://www.dndbeyond.com/sources/dmg/dungeon-masters-workshop#VariantSpellPoints) as described in the Dungeon Master's Guide. 
 
-* Adds a Spell Point Tracking System to every Actor that is a spellcaster
+* Adds a Spell Point tracking system to every actor that is a spellcaster
   * Displays the remaining spell points etc. in the sheet header for easy access
-* Replaces parts of the Spellbook in the sheet to show point costs and remaining uses
-* Automatically resets Spellpoints on long rest and consumes them when a spell is used
-* Works with multiclassing
-* NPC's and non-spellcasters don't change
+* shows point costs and remaining uses in the spellbook
+* Automatically resets spell points on long rest and consumes them when a spell is used
+* Works with multi-classing
+* NPC's and non-spellcasters still use spell slots
 
 ![Screenshot](images/screenshot.jpg)
 
