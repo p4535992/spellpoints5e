@@ -1,18 +1,3 @@
-function toArray(enums) {
-    return Array.prototype.slice.call(enums);
-}
-
-Function.prototype.curry = function() {
-    if (arguments.length<1) {
-        return this; //nothing to curry with - return function
-    }
-    var __method = this;
-    var args = toArray(arguments);
-    return function() {
-        return __method.apply(this, args.concat(toArray(arguments)));
-    }
-}
-
 class VSpellPoints {
     static ID = 'spellpoints5e';
 
