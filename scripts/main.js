@@ -391,52 +391,47 @@ Hooks.once('ready', () => {
             actorsheet.activateListeners($(newAttribute).find(".spellpoints"))
         })
 
-        // change the slot info to spell point cost and remaining spell points
-        // and filter out warlock spells
-        let itemsHeader = html
-            .find(".tab.spellbook")
-            .find(".items-header.spellbook-header");
-
         // add point cost and remaining spellpoints indicator to every spell category
         // also add remaining uses if 6th level or higher
-        itemsHeader.find("h3").addClass("points-variant")
-        itemsHeader
+        html.find(".tab.spellbook")
+            .find(".items-header.spellbook-header")
             .find(".spell-slots")
             .each(function (i) {
                 let dataLevel = $(this).find(".spell-max[data-level]").attr("data-level")
 
-                // skip spells without limited uses
+                // skip spells without limited uses and pact spells
+                if (!dataLevel || !dataLevel.includes("spell") ) {
+                    return true;
+                }
+
                 let newSlotInfo;
                 let newUsesInfo;
-                if (!dataLevel || !dataLevel.includes("spell") ) {
-                    newSlotInfo = " - "
-                    newUsesInfo = ""
-                } else {
-                    let spellLevel = parseInt(dataLevel.replace("spell",""));
-                    newSlotInfo = `
-                        <span> ${VSpellPointsCalcs.getSpellPointCost(spellLevel)} </span>
-                        <span class="sep"> / </span>
-                        <span class="spell-max">${actorResources?.points?.value ?? 0} P</span>`;
+                let spellLevel = parseInt(dataLevel.replace("spell",""));
+                newSlotInfo = `
+                    <span> ${VSpellPointsCalcs.getSpellPointCost(spellLevel)} </span>
+                    <span class="sep"> / </span>
+                    <span class="spell-max">${actorResources?.points?.value ?? 0} P</span>`;
 
-                    // for uses: skip spells under lvl 6
-                    if (spellLevel < 6) newUsesInfo = ""
-                    else {
-                        newUsesInfo = `
-                            <div class="spell-uses" title="remaining uses">
-                                (<input type="text" 
-                                        name="${VSpellPoints.resourcesPath()}.uses.${dataLevel}.value" 
-                                        value="${actorResources.uses[dataLevel]?.value ?? 0}" placeholder="0" 
-                                        data-dtype="Number">
-                                <span class="sep"> / </span>
-                                <span class="spell-max">
-                                    ${actorResources.uses[dataLevel].max}
-                                </span>)
-                            </div>`
-                    }
+                // for uses: skip spells under lvl 6
+                if (spellLevel < 6) newUsesInfo = ""
+                else {
+                    newUsesInfo = `
+                        <div class="spell-uses" title="remaining uses">
+                            (<input type="text" 
+                                    name="${VSpellPoints.resourcesPath()}.uses.${dataLevel}.value" 
+                                    value="${actorResources.uses[dataLevel]?.value ?? 0}" placeholder="0" 
+                                    data-dtype="Number">
+                            <span class="sep"> / </span>
+                            <span class="spell-max">
+                                ${actorResources.uses[dataLevel].max}
+                            </span>)
+                        </div>`
                 }
+
                 // add uses indicator to the left of point cost indicator
                 $(newUsesInfo).insertBefore($(this))
 
+                $(this).parent().find("h3").addClass("points-variant")
                 $(this).attr('title', 'cost / remaining spell points');
                 $(this).removeClass("spell-slots")
                 $(this).addClass("spell-points")
@@ -523,9 +518,7 @@ Hooks.once('ready', () => {
                     // do nothing
                 } else {
                     let spellLevel = parseInt(spellValue)
-
                     let cost = VSpellPointsCalcs.getSpellPointCost(spellLevel)
-
                     let new_text = ""
                     new_text += `${textParts[0]} ${textParts[1]} `
 
