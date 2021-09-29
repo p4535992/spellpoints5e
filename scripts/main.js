@@ -150,7 +150,7 @@ class VSpellPointsData {
 
         // return default values
         let defaultResources = foundry.utils.mergeObject(this.resourcesTemplate, actorResources, {insertKeys: false, overwrite: true, recursive: true})
-        return { defaultResources: defaultResources }
+        return defaultResources
     }
 
     static deletePoints(actor) {
@@ -403,7 +403,7 @@ Hooks.once('ready', () => {
         VSpellPoints.log("renderActor: ", foundry.utils.deepClone(actor))
 
         // initialize spellpoints data in the actor, if not yet present
-        const { defaultResources } = VSpellPointsData.initPoints(actor)
+        const defaultResources = VSpellPointsData.initPoints(actor)
 
         // removes non spellcasters and single-class warlocks
         VSpellPoints.log("Render Sheet: warlock, spellcaster:", isWarlock(actor), isSpellcaster(actor))
@@ -415,10 +415,10 @@ Hooks.once('ready', () => {
 
         let savedResourcesData = VSpellPointsData.getResources(actor) ?? {}
         /** @type Resource */
-        let resourcesData = foundry.utils.isObjectEmpty(savedResourcesData) ? defaultResources : savedResourcesData;
-        VSpellPoints.log("Using pointData: ", resourcesData)
+        let actorResources = foundry.utils.isObjectEmpty(savedResourcesData) ? defaultResources : savedResourcesData;
+        VSpellPoints.log("Using pointData: ", actorResources)
 
-        let spellPointsAttribute = VSpellPointsCalcs.createSpellPointsInfo(actor, resourcesData, actorsheet);
+        let spellPointsAttribute = VSpellPointsCalcs.createSpellPointsInfo(actor, actorResources, actorsheet);
         let newAttribute = attributesList.append(spellPointsAttribute)
 
         // activate all listeners for the new html
@@ -441,7 +441,7 @@ Hooks.once('ready', () => {
                 let newSlotInfo = `
                     <span> ${VSpellPointsCalcs.getSpellPointCost(i)} </span>
                     <span class="sep"> / </span>
-                    <span class="spell-max">${resourcesData?.points?.value ?? 0} P</span>`
+                    <span class="spell-max">${actorResources?.points?.value ?? 0} P</span>`
 
                 // ignore cantrips
                 if (i === 0) newSlotInfo = " - "
@@ -463,11 +463,11 @@ Hooks.once('ready', () => {
                     <div class="spell-uses" title="remaining uses">
                         (<input type="text" 
                                 name="${VSpellPoints.resourcesPath()}.uses.${spellStr}.value" 
-                                value="${resourcesData.uses[spellStr]?.value ?? 0}" placeholder="0" 
+                                value="${actorResources.uses[spellStr]?.value ?? 0}" placeholder="0" 
                                 data-dtype="Number">
                         <span class="sep"> / </span>
                         <span class="spell-max">
-                            ${ resourcesData.uses[spellStr].max}
+                            ${ actorResources.uses[spellStr].max}
                         </span>)
                     </div><!-- <div class="flex-gap" style="display: inline-flex; flex-wrap: wrap"></div><div class="flex-gap" style="display: inline-flex; flex-wrap: wrap"></div> -->`
                 $(this).after(usesInfo);
@@ -517,9 +517,11 @@ Hooks.once('ready', () => {
 
         VSpellPoints.log(dialog, html, object)
         /** @type Resource */
-        let resourcesData = VSpellPointsData.getResources(actor);
+        let actorResources = VSpellPointsData.getResources(actor);
+        if (!actorResources || foundry.utils.isObjectEmpty(actorResources))
+            actorResources = VSpellPointsData.initPoints(actor);
 
-        // change consume spell slot text
+            // change consume spell slot text
         let consumeText = $(html)
             .find("#ability-use-form")
             .find("input[name='consumeSlot']")
@@ -556,12 +558,12 @@ Hooks.once('ready', () => {
                     new_text += `${textParts[0]} ${textParts[1]} `
 
                     // add spellpoint cost and spellpoints left
-                    new_text += `(${cost} / ${resourcesData.points?.value ?? 0} Spell Points)`
+                    new_text += `(${cost} / ${actorResources.points?.value ?? 0} Spell Points)`
 
                     // add uses left
                     if (spellLevel >= 6) {
-                        let uses = resourcesData.uses[`spell${spellLevel}`].value;
-                        let usesMax = resourcesData.uses[`spell${spellLevel}`].max
+                        let uses = actorResources?.uses[`spell${spellLevel}`]?.value ?? 0;
+                        let usesMax = actorResources?.uses[`spell${spellLevel}`]?.max ?? 0;
                         new_text += ` (${usesMax} / ${uses} uses)`
                     }
                     $(this).text(new_text);
@@ -574,9 +576,12 @@ Hooks.once('ready', () => {
     // TODO: Maybe only add a hook call and handle it by myself
     let oldRestSpellRecovery = game.dnd5e.entities.Actor5e.prototype._getRestSpellRecovery;
     game.dnd5e.entities.Actor5e.prototype._getRestSpellRecovery = function({ recoverPact=true, recoverSpells=true }) {
-        // use normal function if variant is disabled or because of other factors
+
+        VSpellPoints.log("recover pact:", recoverPact, "recover spells:", recoverSpells)
         VSpellPoints.log("_getRestSpellRecovery: warlock, spellcaster", isWarlock(this), isSpellcaster(this))
-        if (!isModuleEnabled() || !isCharacter(this) || !isSpellcaster(this)) {
+
+        // use normal function if variant usage is disabled, no spells are being recovered, its an NPC or its not a spellcaster
+        if (!isModuleEnabled() || !recoverSpells || !isCharacter(this) || !isSpellcaster(this)) {
             return oldRestSpellRecovery.apply(this, arguments);
         }
 
@@ -585,14 +590,16 @@ Hooks.once('ready', () => {
 
         /** @type Resource */
         let actorResources = VSpellPointsData.getResources(this)
+        if (!actorResources || foundry.utils.isObjectEmpty(actorResources))
+            actorResources = VSpellPointsData.initPoints(actor);
 
         // and then add my own update: reset current, tempPoints, tempMax and uses
-        if (actorResources.points.value !== undefined && actorResources.points.max !== undefined)
-            oldUpdate[`${VSpellPoints.resourcesPath()}.points.value`] = actorResources.points.max;
+        if (actorResources?.points?.value !== undefined && actorResources?.points?.max !== undefined)
+            oldUpdate[`${VSpellPoints.resourcesPath()}.points.value`] = actorResources?.points?.max ?? 0;
             oldUpdate[`${VSpellPoints.resourcesPath()}.points.temp`] = 0;
             oldUpdate[`${VSpellPoints.resourcesPath()}.points.addMax`] = 0;
             // reset uses for over 6th level spells
-            Object.entries(actorResources.uses).forEach( ([spellLevel, data]) => {
+            Object.entries(actorResources?.uses ?? {}).forEach( ([spellLevel, data]) => {
                 VSpellPoints.log(`${VSpellPoints.resourcesPath()}.uses.${spellLevel}.value`, data.max)
                 oldUpdate[`${VSpellPoints.resourcesPath()}.uses.${spellLevel}.value`] = data.max
             })
@@ -634,6 +641,8 @@ Hooks.once('ready', () => {
 
         /** @type Resource */
         let actorResources = VSpellPointsData.getResources(actor);
+        if (!actorResources || foundry.utils.isObjectEmpty(actorResources))
+            actorResources = VSpellPointsData.initPoints(actor);
 
         // string of spelllevel to number
         let spellLevel = parseInt("" + spellLevelStr.replace("spell", ""))
@@ -645,14 +654,14 @@ Hooks.once('ready', () => {
         let spellCost = VSpellPointsCalcs.getSpellPointCost(spellLevel)
         VSpellPoints.log("spelllevel: " + spellLevel)
         VSpellPoints.log("spellCost: " + spellCost)
-        VSpellPoints.log("currentPoint: " + actorResources.points.value)
-        VSpellPoints.log("maxSpellLevel: " + actorResources.maxLevel)
-        if (spellLevel >= usesSpellLevel) VSpellPoints.log(`usesRemaining-${spellLevelStr}: ` + actorResources.uses[spellLevelStr].value)
+        VSpellPoints.log("currentPoint: " + actorResources?.points?.value)
+        VSpellPoints.log("maxSpellLevel: " + actorResources?.maxLevel)
+        if (spellLevel >= usesSpellLevel) VSpellPoints.log(`usesRemaining-${spellLevelStr}: ` + actorResources?.uses[spellLevelStr]?.value ?? 0)
 
         // error if no or not enough spell points are left, or if level is too high, or if uses remaining
-        let currentNotOk = !spellCost || !actorResources.points.value || actorResources.points.value < spellCost
-        let spellLevelNotOk = !spellLevel || !actorResources.maxLevel || spellLevel > actorResources.maxLevel
-        let noUsesRemaining = spellLevel >= usesSpellLevel ? actorResources.uses[spellLevelStr].value === 0 : false
+        let currentNotOk = !spellCost || !actorResources?.points?.value || actorResources?.points?.value < spellCost
+        let spellLevelNotOk = !spellLevel || !actorResources?.maxLevel || spellLevel > actorResources?.maxLevel
+        let noUsesRemaining = spellLevel >= usesSpellLevel ? actorResources?.uses[spellLevelStr]?.value === 0 : false
 
         VSpellPoints.log(`Enough points: ${!currentNotOk}, level ok: ${!spellLevelNotOk}, uses ok: ${!noUsesRemaining}`)
 
@@ -673,10 +682,10 @@ Hooks.once('ready', () => {
 
         // if can be cast: use spell points
         // => adjust oldUpdate data to include the new current spellpoints
-        oldUpdate.actorUpdates[`${VSpellPoints.resourcesPath()}.points.value`] = Math.max(actorResources.points.value - spellCost, 0);
+        oldUpdate.actorUpdates[`${VSpellPoints.resourcesPath()}.points.value`] = Math.max((actorResources?.points?.value ?? 0) - spellCost, 0);
 
         // update uses of the spell
-        if (spellLevel >= usesSpellLevel) oldUpdate.actorUpdates[`${VSpellPoints.resourcesPath()}.uses.${spellLevelStr}.value`] = actorResources.uses[spellLevelStr].value - 1
+        if (spellLevel >= usesSpellLevel) oldUpdate.actorUpdates[`${VSpellPoints.resourcesPath()}.uses.${spellLevelStr}.value`] = (actorResources?.uses[spellLevelStr]?.value ?? 0) - 1
         return oldUpdate;
     }
 })
