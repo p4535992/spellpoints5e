@@ -1,3 +1,18 @@
+function toArray(enums) {
+    return Array.prototype.slice.call(enums);
+}
+
+Function.prototype.curry = function() {
+    if (arguments.length<1) {
+        return this; //nothing to curry with - return function
+    }
+    var __method = this;
+    var args = toArray(arguments);
+    return function() {
+        return __method.apply(this, args.concat(toArray(arguments)));
+    }
+}
+
 class VSpellPoints {
     static ID = 'spellpoints5e';
 
@@ -225,7 +240,7 @@ class VSpellPointsCalcs {
     static THIRD = 1;
     static HALF = 2;
     static FULL = 3;
-    static ARTIFICER = 4;
+    static ART = 4;
 
     // map from caster name (String) to their spellcasting type
     static transformCasterType (casterType) {
@@ -233,7 +248,7 @@ class VSpellPointsCalcs {
             case 'none': return this.NONE;
             case 'pact': return this.NONE;
             case 'third': return this.THIRD;
-            case 'artificer': return this.ARTIFICER;
+            case 'artificer': return this.ART; // Artificer
             case 'half': return this.HALF;
             case 'full': return this.FULL;
             default: return this.NONE;
@@ -248,7 +263,7 @@ class VSpellPointsCalcs {
             case this.THIRD: return Math.floor(classLevel / 3);
             case this.HALF: return Math.floor(classLevel / 2);
             case this.FULL: return classLevel;
-            case this.ARTIFICER: return Math.max(1, Math.floor(classLevel / 2)); // Artificers are half caster spellslots on lvl 1
+            case this.ART: return Math.max(1, Math.floor(classLevel / 2)); // Artificers are half caster spellslots on lvl 1
             default: return 0;
         }
     }
@@ -426,7 +441,7 @@ Hooks.once('ready', () => {
         let itemsHeader = html
             .find(".tab.spellbook")
             .find(".items-header.spellbook-header")
-            .filter(function() {
+            .filter(function () {
                 // the name attribute marks a row with pact spells
                 return ($(this).find('[name="data.spells.pact.value"]').length === 0);
             });
@@ -434,7 +449,7 @@ Hooks.once('ready', () => {
         itemsHeader.find("h3").addClass("points-variant")
         itemsHeader
             .find(".spell-slots")
-            .each( function(i) {
+            .each(function (i) {
                 let newSlotInfo = `
                     <span> ${VSpellPointsCalcs.getSpellPointCost(i)} </span>
                     <span class="sep"> / </span>
@@ -451,7 +466,7 @@ Hooks.once('ready', () => {
 
         itemsHeader
             .find("h3")
-            .each( function(i) {
+            .each(function (i) {
                 // ignore spells below 6th level
                 if (i < 6) return true;
 
@@ -464,7 +479,7 @@ Hooks.once('ready', () => {
                                 data-dtype="Number">
                         <span class="sep"> / </span>
                         <span class="spell-max">
-                            ${ actorResources.uses[spellStr].max}
+                            ${actorResources.uses[spellStr].max}
                         </span>)
                     </div><!-- <div class="flex-gap" style="display: inline-flex; flex-wrap: wrap"></div><div class="flex-gap" style="display: inline-flex; flex-wrap: wrap"></div> -->`
                 $(this).after(usesInfo);
@@ -518,27 +533,27 @@ Hooks.once('ready', () => {
         if (!actorResources || foundry.utils.isObjectEmpty(actorResources))
             actorResources = VSpellPointsData.initPoints(actor);
 
-            // change consume spell slot text
+        // change consume spell slot text
         let consumeText = $(html)
             .find("#ability-use-form")
             .find("input[name='consumeSlot']")
             .parent()
-            .contents().filter(function() {
+            .contents().filter(function () {
                 // get only text elements
                 return this.nodeType === 3;
             });
 
         if (VSpellPointsData.isWarlock(actor))
-            $(consumeText)[0].textContent="Consume Spell Points / Slots?";
+            $(consumeText)[0].textContent = "Consume Spell Points / Slots?";
         else
-            $(consumeText)[0].textContent="Consume Spell Points?";
+            $(consumeText)[0].textContent = "Consume Spell Points?";
 
         // modify the "cast at level" list
         $(html)
             .find("#ability-use-form")
             .find("select[name='level']")
             .find("option")
-            .each( function (i) {
+            .each(function (i) {
                 let textParts = $(this).text().split(" ")
                 let spellValue = $(this).attr("value")
 
@@ -568,12 +583,43 @@ Hooks.once('ready', () => {
             })
     })
 
-    // TODO: use libwrapper
-    // Monkey patch the long rest function so it resets the spell points
-    // TODO: Maybe only add a hook call and handle it by myself
-    let oldRestSpellRecovery = game.dnd5e.entities.Actor5e.prototype._getRestSpellRecovery;
-    game.dnd5e.entities.Actor5e.prototype._getRestSpellRecovery = function({ recoverPact=true, recoverSpells=true }) {
+    if (typeof libWrapper === 'function') {
+        VSpellPoints.log("Libwrapper found")
 
+        /* Using libwrapper, if present,  to manage MonkeyPatched functions */
+        libWrapper.register(VSpellPoints.ID, 'game.dnd5e.entities.Actor5e.prototype._getRestSpellRecovery',
+            function (wrapped, ...args) {
+
+                VSpellPoints.log('libwrapper: game.dnd5e.entities.Actor5e.prototype._getRestSpellRecovery was called');
+                return override_getRestSpellRecovery(wrapped).bind(this)(...args)
+
+        }, 'WRAPPER');
+
+        libWrapper.register(VSpellPoints.ID, 'game.dnd5e.entities.Item5e.prototype._getUsageUpdates',
+            function (wrapped, ...args) {
+
+                VSpellPoints.log('libwrapper: game.dnd5e.entities.Item5e.prototype._getUsageUpdates was called');
+                return override_getUsageUpdates(wrapped).bind(this)(...args)
+
+        }, 'WRAPPER');
+
+    } else {
+        /* libWrapper is not available in global scope and can't be used */
+        console.warn(`${VSpellPoints.ID} | Please install the module 'libWrapper' to avoid conflicts`)
+
+        // Monkey patch the long rest function so it resets the spell points
+        let oldRestSpellRecovery = game.dnd5e.entities.Actor5e.prototype._getRestSpellRecovery;
+        game.dnd5e.entities.Actor5e.prototype._getRestSpellRecovery = override_getRestSpellRecovery(oldRestSpellRecovery);
+
+        // Monkey patch the roll spell function so it consumes spell points
+        let oldUsageUpdate = game.dnd5e.entities.Item5e.prototype._getUsageUpdates;
+        game.dnd5e.entities.Item5e.prototype._getUsageUpdates = override_getUsageUpdates(oldUsageUpdate);
+    }
+})
+
+function override_getRestSpellRecovery (oldRestSpellRecovery) {
+    return function({recoverPact = true, recoverSpells = true}) {
+        console.log(this)
         VSpellPoints.log("recover pact:", recoverPact, "recover spells:", recoverSpells)
         VSpellPoints.log("_getRestSpellRecovery: warlock, spellcaster", VSpellPointsData.isWarlock(this), VSpellPointsData.isSpellcaster(this))
 
@@ -593,25 +639,29 @@ Hooks.once('ready', () => {
         // and then add my own update: reset current, tempPoints, tempMax and uses
         if (actorResources?.points?.value !== undefined && actorResources?.points?.max !== undefined)
             oldUpdate[`${VSpellPoints.resourcesPath()}.points.value`] = actorResources?.points?.max ?? 0;
-            oldUpdate[`${VSpellPoints.resourcesPath()}.points.temp`] = 0;
-            oldUpdate[`${VSpellPoints.resourcesPath()}.points.addMax`] = 0;
-            // reset uses for over 6th level spells
-            Object.entries(actorResources?.uses ?? {}).forEach( ([spellLevel, data]) => {
-                VSpellPoints.log(`${VSpellPoints.resourcesPath()}.uses.${spellLevel}.value`, data.max)
-                oldUpdate[`${VSpellPoints.resourcesPath()}.uses.${spellLevel}.value`] = data.max
-            })
+        oldUpdate[`${VSpellPoints.resourcesPath()}.points.temp`] = 0;
+        oldUpdate[`${VSpellPoints.resourcesPath()}.points.addMax`] = 0;
+        // reset uses for over 6th level spells
+        Object.entries(actorResources?.uses ?? {}).forEach(([spellLevel, data]) => {
+            VSpellPoints.log(`${VSpellPoints.resourcesPath()}.uses.${spellLevel}.value`, data.max)
+            oldUpdate[`${VSpellPoints.resourcesPath()}.uses.${spellLevel}.value`] = data.max
+        })
 
         return oldUpdate;
     }
+}
 
-
-    // Monkey patch the roll spell function so it consumes spell points
-    // TODO: Maybe only add a hook and handle it by myself
-    let oldUsageUpdate = game.dnd5e.entities.Item5e.prototype._getUsageUpdates;
-    game.dnd5e.entities.Item5e.prototype._getUsageUpdates = function({consumeQuantity, consumeRecharge, consumeResource, consumeSpellLevel, consumeUsage}) {
+function override_getUsageUpdates(oldUsageUpdate) {
+    return function ({consumeQuantity, consumeRecharge, consumeResource, consumeSpellLevel, consumeUsage}) {
         let actor = this.parent;
 
-        VSpellPoints.log("_getUsageUpdates", {consumeQuantity, consumeRecharge, consumeResource, consumeSpellLevel, consumeUsage}, this)
+        VSpellPoints.log("_getUsageUpdates", {
+            consumeQuantity,
+            consumeRecharge,
+            consumeResource,
+            consumeSpellLevel,
+            consumeUsage
+        }, this)
         // use normal function if variant is disabled or because of other factors
         // do default behaviour if no spell level is used or module is deactivated
         VSpellPoints.log("_getUsageUpdates: warlock, spellcaster, consumeSpellLevel:", VSpellPointsData.isWarlock(actor), VSpellPointsData.isSpellcaster(actor), consumeSpellLevel)
@@ -632,7 +682,13 @@ Hooks.once('ready', () => {
         consumeSpellLevel = null
 
         // call normal spell recovery
-        let oldUpdate = oldUsageUpdate.apply(this, [{consumeQuantity, consumeRecharge, consumeResource, consumeSpellLevel, consumeUsage}]);
+        let oldUpdate = oldUsageUpdate.apply(this, [{
+            consumeQuantity,
+            consumeRecharge,
+            consumeResource,
+            consumeSpellLevel,
+            consumeUsage
+        }]);
 
         VSpellPoints.log(oldUpdate)
 
@@ -685,4 +741,4 @@ Hooks.once('ready', () => {
         if (spellLevel >= usesSpellLevel) oldUpdate.actorUpdates[`${VSpellPoints.resourcesPath()}.uses.${spellLevelStr}.value`] = (actorResources?.uses[spellLevelStr]?.value ?? 0) - 1
         return oldUpdate;
     }
-})
+}

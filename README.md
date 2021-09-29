@@ -15,7 +15,13 @@ This module implements the [Variant Spell Points Rule](https://www.dndbeyond.com
 
 ## Installation Instructions
 
-In the setup screen, use the URL https://github.com/Mary-Usagi/dnd5e-variant-spellpoints/releases/latest/download/module.json to install the module.
+> [optional] Install the [libWrapper](https://foundryvtt.com/packages/lib-wrapper) module to avoid conflicts.
+
+1. In `Configuration and Setup` go to `Add-on Modules` 
+2. Click on `Install Module`
+3. Paste the following URL into the `Manifest URL` text box at the bottom: 
+   - https://github.com/Mary-Usagi/dnd5e-variant-spellpoints/releases/latest/download/module.json
+
 
 ## TODO
 - **Settings to adjust spell costs and max points per level (GM only)**
