@@ -1,13 +1,10 @@
 class VSpellPoints {
-    static ID_old = 'dnd5e-variant-spellpoints';
-
-    // TODO: rename module
     static ID = 'spellpoints5e';
 
     static FLAGS = {
-        POINTS: 'points', // was: 'spellpoints'
-        USES: 'uses',
-        RESOURCES: 'resources' // TODO: will replace points and uses
+        POINTS: 'points', // legacy
+        USES: 'uses', // legacy
+        RESOURCES: 'resources'
     }
 
     static resourcesPath() {
@@ -138,6 +135,7 @@ class VSpellPointsData {
             }
 
             for (let j = 6; j <= 9; j++) {
+                updateResources.uses[`spell${j}`] = {}
                 if (j <= level) updateResources.uses[`spell${j}`].max = 1
                 else updateResources.uses[`spell${j}`].max = 0
             }
@@ -169,6 +167,54 @@ class VSpellPointsData {
         return actor.getFlag(VSpellPoints.ID, VSpellPoints.FLAGS.RESOURCES);
     }
 
+    // chech if actor is a player character
+    static isCharacter(actor) {
+        if (actor.data?.type !== "character") {
+            VSpellPoints.log("Actor is not a player")
+            return false
+        }
+        return true
+    }
+
+    // check if actor is spellcasters
+    static isSpellcaster(actor) {
+        let classes = actor?.data?.data?.classes;
+        if (!classes) {
+            VSpellPoints.log("Actor doesn't have a class")
+            return false;
+        }
+
+        let isCaster = VSpellPointsCalcs.getCombinedSpellCastingLevel(classes)[0] > 0;
+        if (!isCaster) {
+            VSpellPoints.log("Actor is not a spellcaster")
+            return false
+        }
+        return true
+    }
+
+    // check if actor is warlock
+    static isWarlock(actor) {
+        if (!(actor?.data?.data?.classes)) {
+            return false
+        }
+
+        if ('warlock' in actor.data.data.classes) {
+            VSpellPoints.log("Actor is a Warlock")
+            return true;
+        }
+        return false;
+    }
+
+    // check if module was enabled in the settings
+    static ModuleEnabled() {
+        const useModule = game.settings.get(VSpellPoints.ID,VSpellPoints.SETTINGS.TOGGLEON);
+        if (!useModule) {
+            VSpellPoints.log('Variant Spellpoints not used')
+            return false;
+        }
+        return true
+    }
+
     // TODO: think about how to do it
     // static updateGlobalSpellPointsTable(updateData) {}
     // static updateGlobalSpellCostTable(updateData) {}
@@ -179,6 +225,7 @@ class VSpellPointsCalcs {
     static THIRD = 1;
     static HALF = 2;
     static FULL = 3;
+    static ARTIFICER = 4;
 
     // map from caster name (String) to their spellcasting type
     static transformCasterType (casterType) {
@@ -186,7 +233,7 @@ class VSpellPointsCalcs {
             case 'none': return this.NONE;
             case 'pact': return this.NONE;
             case 'third': return this.THIRD;
-            case 'artificer': return this.HALF; // TODO: correct?
+            case 'artificer': return this.ARTIFICER;
             case 'half': return this.HALF;
             case 'full': return this.FULL;
             default: return this.NONE;
@@ -201,6 +248,7 @@ class VSpellPointsCalcs {
             case this.THIRD: return Math.floor(classLevel / 3);
             case this.HALF: return Math.floor(classLevel / 2);
             case this.FULL: return classLevel;
+            case this.ARTIFICER: return Math.max(1, Math.floor(classLevel / 2)); // Artificers are half caster spellslots on lvl 1
             default: return 0;
         }
     }
@@ -231,7 +279,6 @@ class VSpellPointsCalcs {
     static lockedSpellLevels = [6, 7, 8, 9];
 
     // TODO: editable? (in Settings? Or in the character itself? Only gm or also player?)
-    // TODO: check for errors
     // starting with character level 0
     // [max points, max spell level]
     static _spellPointsByLevelTable = [
@@ -338,65 +385,15 @@ Hooks.once('ready', () => {
     console.log(`${VSpellPoints.ID} | Initializing module`)
     VSpellPoints.initialize();
 
-    // TODO: find better place for the functions
-    // chekc if actor is a player character
-    function isCharacter(actor) {
-        if (actor.data?.type !== "character") {
-            VSpellPoints.log("Actor is not a player")
-            return false
-        }
-        return true
-    }
-
-    // check if actor is spellcasters
-    function isSpellcaster(actor) {
-        let classes = actor?.data?.data?.classes;
-        if (!classes) {
-            VSpellPoints.log("Actor is not a spellcaster")
-            return false;
-        }
-
-        let isCaster = VSpellPointsCalcs.getCombinedSpellCastingLevel(classes)[0] > 0;
-        if (!isCaster) {
-            VSpellPoints.log("Actor is not a spellcaster")
-            return false
-        }
-
-        return true
-    }
-
-    // check if actor is warlock
-    function isWarlock(actor) {
-        if (!(actor?.data?.data?.classes)) {
-            return false
-        }
-
-        if ('warlock' in actor.data.data.classes) {
-            VSpellPoints.log("Actor is a Warlock")
-            return true;
-        }
-        return false;
-    }
-
-    // check if module was enabled in the settings
-    function isModuleEnabled() {
-        const useModule = game.settings.get(VSpellPoints.ID,VSpellPoints.SETTINGS.TOGGLEON);
-        if (!useModule) {
-            VSpellPoints.log('Variant Spellpoints not used')
-            return false;
-        }
-        return true
-    }
-
     // modify actorsheet after its rendered to show the spell points
     Hooks.on("renderActorSheet5e", (actorsheet, html, _options) => {
         VSpellPoints.log("RENDER", actorsheet, html, _options)
 
         // prevent execution if variant is disabled
-        if (!isModuleEnabled()) return;
+        if (!VSpellPointsData.ModuleEnabled()) return;
 
         let actor = actorsheet.object;
-        if (!isCharacter(actor)) return;
+        if (!VSpellPointsData.isCharacter(actor)) return;
 
         VSpellPoints.log("++++++++++++++++++")
         VSpellPoints.log("render actorsheet", actorsheet)
@@ -406,8 +403,8 @@ Hooks.once('ready', () => {
         const defaultResources = VSpellPointsData.initPoints(actor)
 
         // removes non spellcasters and single-class warlocks
-        VSpellPoints.log("Render Sheet: warlock, spellcaster:", isWarlock(actor), isSpellcaster(actor))
-        if (!isSpellcaster(actor)) return;
+        VSpellPoints.log("Render Sheet: warlock, spellcaster:", VSpellPointsData.isWarlock(actor), VSpellPointsData.isSpellcaster(actor))
+        if (!VSpellPointsData.isSpellcaster(actor)) return;
 
         // change header of sheet
         VSpellPoints.log("It's a caster! - Level " + VSpellPointsCalcs.getCombinedSpellCastingLevel(actor.data.data.classes)[0])
@@ -483,7 +480,7 @@ Hooks.once('ready', () => {
 
     Hooks.on("renderLongRestDialog", (dialog, html, options) => {
         // prevent execution if variant is disabled
-        if (!isModuleEnabled()) return;
+        if (!VSpellPointsData.ModuleEnabled()) return;
 
         // TODO: Sachen nicht von text abhängig machen
         let text = $(html).find(".dialog-content").children("p").text().replace('spell slots', 'spell points');
@@ -494,15 +491,15 @@ Hooks.once('ready', () => {
     // replace the spell slot reminder in the ability use dialog
     Hooks.on("renderAbilityUseDialog", (dialog, html, object) => {
         // prevent execution if variant is disabled
-        if (!isModuleEnabled()) return;
+        if (!VSpellPointsData.ModuleEnabled()) return;
 
         VSpellPoints.log(dialog, html, object)
         let item = dialog.item
         let actor = item.parent;
 
-        VSpellPoints.log("Render Ability Use: warlock, spellcaster:", isWarlock(actor), isSpellcaster(actor))
+        VSpellPoints.log("Render Ability Use: warlock, spellcaster:", VSpellPointsData.isWarlock(actor), VSpellPointsData.isSpellcaster(actor))
         // filters out npcs, non spellcasters and single-class warlocks
-        if (!isCharacter(actor) || !isSpellcaster(actor)) return;
+        if (!VSpellPointsData.isCharacter(actor) || !VSpellPointsData.isSpellcaster(actor)) return;
 
         // TODO: Show red warning box if it can't be cast
 
@@ -531,7 +528,7 @@ Hooks.once('ready', () => {
                 return this.nodeType === 3;
             });
 
-        if (isWarlock(actor))
+        if (VSpellPointsData.isWarlock(actor))
             $(consumeText)[0].textContent="Consume Spell Points / Slots?";
         else
             $(consumeText)[0].textContent="Consume Spell Points?";
@@ -578,10 +575,10 @@ Hooks.once('ready', () => {
     game.dnd5e.entities.Actor5e.prototype._getRestSpellRecovery = function({ recoverPact=true, recoverSpells=true }) {
 
         VSpellPoints.log("recover pact:", recoverPact, "recover spells:", recoverSpells)
-        VSpellPoints.log("_getRestSpellRecovery: warlock, spellcaster", isWarlock(this), isSpellcaster(this))
+        VSpellPoints.log("_getRestSpellRecovery: warlock, spellcaster", VSpellPointsData.isWarlock(this), VSpellPointsData.isSpellcaster(this))
 
         // use normal function if variant usage is disabled, no spells are being recovered, its an NPC or its not a spellcaster
-        if (!isModuleEnabled() || !recoverSpells || !isCharacter(this) || !isSpellcaster(this)) {
+        if (!VSpellPointsData.ModuleEnabled() || !recoverSpells || !VSpellPointsData.isCharacter(this) || !VSpellPointsData.isSpellcaster(this)) {
             return oldRestSpellRecovery.apply(this, arguments);
         }
 
@@ -617,8 +614,8 @@ Hooks.once('ready', () => {
         VSpellPoints.log("_getUsageUpdates", {consumeQuantity, consumeRecharge, consumeResource, consumeSpellLevel, consumeUsage}, this)
         // use normal function if variant is disabled or because of other factors
         // do default behaviour if no spell level is used or module is deactivated
-        VSpellPoints.log("_getUsageUpdates: warlock, spellcaster, consumeSpellLevel:", isWarlock(actor), isSpellcaster(actor), consumeSpellLevel)
-        if (!isModuleEnabled() || !consumeSpellLevel || !isCharacter(actor) || !isSpellcaster(actor)) {
+        VSpellPoints.log("_getUsageUpdates: warlock, spellcaster, consumeSpellLevel:", VSpellPointsData.isWarlock(actor), VSpellPointsData.isSpellcaster(actor), consumeSpellLevel)
+        if (!VSpellPointsData.ModuleEnabled() || !consumeSpellLevel || !VSpellPointsData.isCharacter(actor) || !VSpellPointsData.isSpellcaster(actor)) {
             return oldUsageUpdate.apply(this, arguments);
         }
 
