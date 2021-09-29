@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/accidental-item-deletion-preventer.iml" filepath="$PROJECT_DIR$/.idea/accidental-item-deletion-preventer.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/spellpoints5e.iml" filepath="$PROJECT_DIR$/.idea/spellpoints5e.iml" />
     </modules>
   </component>
 </project>

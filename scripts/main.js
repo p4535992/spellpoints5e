@@ -10,11 +10,8 @@ class VSpellPoints {
         RESOURCES: 'resources' // TODO: will replace points and uses
     }
 
-    static spellPointsPath() {
-        return `flags.${VSpellPoints.ID}.${VSpellPoints.FLAGS.POINTS}`
-    }
-    static usesPath() {
-        return `flags.${VSpellPoints.ID}.${VSpellPoints.FLAGS.USES}`
+    static resourcesPath() {
+        return `flags.${VSpellPoints.ID}.${VSpellPoints.FLAGS.RESOURCES}`
     }
 
     static TEMPLATES = {
@@ -52,54 +49,25 @@ class VSpellPoints {
     }
 }
 
-
-
 class VSpellPointsData {
-    /**
-    static vars = {
-        MAXPOINTS: "maxPoints",
-        MAXSPELLLEVEL: "maxSpellLevel",
-        TEMPMAX: "tempMax",
-        TEMPPOINTS: "tempPoints",
-        CURRENTPOINTS: "currentPoints"
-    }
-
-    static dataTemplate = {
-        [this.vars.MAXPOINTS]: 0,
-        [this.vars.MAXSPELLLEVEL]: 0,
-        [this.vars.TEMPMAX]: 0,
-        [this.vars.TEMPPOINTS]: 0,
-        [this.vars.CURRENTPOINTS]: 0,
-    } */
-
     /** @typedef {{
-     *  maxPoints: number|string,
-     *  maxSpellLevel: number|string,
-     *  tempMax: number|string,
-     *  tempPoints: number|string,
-     *  currentPoints: number|string
-     * }} Vars */
+     *  maxLevel: number,
+     *  points: {
+     *      max: number,
+     *      value: number,
+     *      addMax: number,
+     *      temp: number
+     *  },
+     *  uses: {
+     *      spell6: {max: number, value: number},
+     *      spell7: {max: number, value: number},
+     *      spell8: {max: number, value: number},
+     *      spell9: {max: number, value: number}
+     *  }
+     * }} Resource
+     * */
 
-    /** @type Vars */
-    static vars = {
-        maxPoints: "maxPoints",
-        maxSpellLevel: "maxSpellLevel",
-        tempMax: "tempMax",
-        tempPoints: "tempPoints",
-        currentPoints: "currentPoints"
-    }
-
-    // TODO:  group by points and spellLevel
-    /** @type Vars */
-    static dataTemplate = {
-        maxPoints: 0,
-        maxSpellLevel: 0,
-        tempMax: 0,
-        tempPoints: 0,
-        currentPoints: 0,
-    }
-
-    // TODO: dataTemplate2
+    /** @type Resource */
     static resourcesTemplate = {
         // max spell level
         maxLevel: 0,
@@ -112,30 +80,11 @@ class VSpellPointsData {
         },
         // tracking uses
         uses: {
-            "spell6": {max: 0, value: 0},
-            "spell7": {max: 0, value: 0},
-            "spell8": {max: 0, value: 0},
-            "spell9": {max: 0, value: 0},
+            spell6: {max: 0, value: 0},
+            spell7: {max: 0, value: 0},
+            spell8: {max: 0, value: 0},
+            spell9: {max: 0, value: 0},
         }
-    }
-
-    /** @typedef {{
-     *   "spell6.max": number,
-     *   "spell7.max": number,
-     *   "spell8.max": number,
-     *   "spell9.max": number,
-     *   "spell6.value": number,
-     *   "spell7.value": number,
-     *   "spell8.value": number,
-     *   "spell9.value": number,
-     * }} Uses */
-
-    /** @type Uses */
-    static usesTemplate = {
-        "spell6": {max: 0, value: 0},
-        "spell7": {max: 0, value: 0},
-        "spell8": {max: 0, value: 0},
-        "spell9": {max: 0, value: 0},
     }
 
     // for debugging purposes
@@ -143,105 +92,65 @@ class VSpellPointsData {
         game.actors.forEach((actor) => {
             this.deletePoints(actor);
             this.deleteUses(actor);
+            this.deleteResources(actor);
         })
     }
 
     static initPoints(actor) {
-        let actorSpellPoints = this.getPoints(actor);
-        let actorUses = this.getUses(actor)
-        VSpellPoints.log(actorSpellPoints)
-        VSpellPoints.log(actorUses)
-        let isNotPresent = !actorSpellPoints ||
-            !actorUses ||
-            (actorSpellPoints && Object.keys(actorSpellPoints).length === 0) ||
-            (actorUses && Object.keys(actorUses).length === 0)
+        /** @type Resource */
+        let actorResources = this.getResources(actor);
+        VSpellPoints.log(actorResources)
+
+        let isNotPresent = !actorResources || (actorResources && foundry.utils.isObjectEmpty(actorResources))
 
         let [points, level] = VSpellPointsCalcs.getMaxSpellPointsAndLevel(actor.data.data.classes)
 
-        let updatePoints;
-        let updateUses;
-
+        /** @type Resource */
+        let updateResources;
         if (isNotPresent) {
             console.log(`${VSpellPoints.ID} | Initializing spell points data for: ${actor.name}`)
 
-            // update spell points
-            /** @type {{tempMax: number, currentPoints: number, maxPoints: number, tempPoints: number, maxSpellLevel: number}} */
-            updatePoints = {
-                ...this.dataTemplate,
-                [this.vars.maxPoints]: points,
-                [this.vars.currentPoints]: points,
-                [this.vars.maxSpellLevel]: level
-            }
+            // Update Resources: take template and replace initial values
+            // level and points
+            updateResources = foundry.utils.deepClone(this.resourcesTemplate)
+            updateResources.maxLevel = level;
+            updateResources.points.max = points;
+            updateResources.points.value = points;
 
-            let updateUses = {
-                ...this.usesTemplate
-            }
-
+            // spell uses
             for (let j = 6; j <= level; j++) {
-                updateUses[`spell${j}.max`] = 1
-                updateUses[`spell${j}.value`] = 1
+                updateResources.uses[`spell${j}`].max = 1
+                updateResources.uses[`spell${j}`].value = 1
             }
 
-            // TODO: combine both set flags to one update
-            actor.setFlag(VSpellPoints.ID, VSpellPoints.FLAGS.POINTS, updatePoints);
-            actor.setFlag(VSpellPoints.ID, VSpellPoints.FLAGS.USES, updateUses);
-
-        } else if (actorSpellPoints.maxPoints !== points || actorSpellPoints.maxSpellLevel !== level) {
+            // persist in actor
+            actor.setFlag(VSpellPoints.ID, VSpellPoints.FLAGS.RESOURCES, updateResources);
+        } else if (actorResources.points.max !== points || actorResources.maxLevel !== level) {
             // TODO (maybe): Put into update actor hook
             VSpellPoints.log(`${VSpellPoints.ID} | Updating spell points data for: ${actor.name}`)
 
-            updatePoints = {
-                maxPoints: points,
-                maxSpellLevel: level
-            }
-            VSpellPoints.log(updatePoints)
-
-
-            updateUses = {
-                "spell6": {max: 0},
-                "spell7": {max: 0},
-                "spell8": {max: 0},
-                "spell9": {max: 0},
+            // Update Resources
+            // level and points
+            updateResources = {
+                maxLevel: level,
+                points: { max: points },
+                uses: {}
             }
 
-            for (let j = 6; j <= level; j++) {
-                updateUses[`spell${j}`].max = 1
+            for (let j = 6; j <= 9; j++) {
+                if (j <= level) updateResources.uses[`spell${j}`].max = 1
+                else updateResources.uses[`spell${j}`].max = 0
             }
-            VSpellPoints.log(updateUses)
 
-            actor.setFlag(VSpellPoints.ID, VSpellPoints.FLAGS.POINTS, updatePoints);
-            actor.setFlag(VSpellPoints.ID, VSpellPoints.FLAGS.USES, updateUses);
+            // persist
+            actor.setFlag(VSpellPoints.ID, VSpellPoints.FLAGS.RESOURCES, updateResources);
         } else {
-            VSpellPoints.log(`${VSpellPoints.ID} | Nothing to do`)
+            VSpellPoints.log(`Nothing to do`)
         }
 
         // return default values
-        return {
-            defaultPoints: { ...this.dataTemplate, ...actorSpellPoints, ...updatePoints },
-            defaultUses: { ...this.usesTemplate,...actorUses, ...updateUses }
-        }
-    }
-
-    /**
-     * @param {Object} actor
-     * @param {Partial<Vars>} updateData
-     */
-    static updatePoints(actor, updateData) {
-        let [points, level] = VSpellPointsCalcs.getMaxSpellPointsAndLevel(actor.data.data.classes)
-
-        let userStats = this.getPoints(actor)
-        if (!userStats) userStats = {}
-
-        // construct the update to send
-        const update = {
-            ...updateData
-        }
-
-        // no negative spell points or higher than max
-        if (update.currentPoints !== undefined)
-            update.currentPoints = Math.clamped(update.currentPoints, 0, (update.maxPoints ?? userStats.maxPoints) + (update.tempMax ?? userStats.tempMax))
-
-        actor.setFlag(VSpellPoints.ID, VSpellPoints.FLAGS.POINTS, update);
+        let defaultResources = foundry.utils.mergeObject(this.resourcesTemplate, actorResources, {insertKeys: false, overwrite: true, recursive: true})
+        return { defaultResources: defaultResources }
     }
 
     static deletePoints(actor) {
@@ -252,12 +161,12 @@ class VSpellPointsData {
         return actor.unsetFlag(VSpellPoints.ID, VSpellPoints.FLAGS.USES)
     }
 
-    static getPoints(actor) {
-        return actor.getFlag(VSpellPoints.ID, VSpellPoints.FLAGS.POINTS);
+    static deleteResources(actor) {
+        return actor.unsetFlag(VSpellPoints.ID, VSpellPoints.FLAGS.RESOURCES)
     }
 
-    static getUses(actor) {
-        return actor.getFlag(VSpellPoints.ID, VSpellPoints.FLAGS.USES);
+    static getResources(actor) {
+        return actor.getFlag(VSpellPoints.ID, VSpellPoints.FLAGS.RESOURCES);
     }
 
     // TODO: think about how to do it
@@ -266,7 +175,6 @@ class VSpellPointsData {
 }
 
 class VSpellPointsCalcs {
-
     static NONE = 0;
     static THIRD = 1;
     static HALF = 2;
@@ -315,7 +223,7 @@ class VSpellPointsCalcs {
     static getSpellPointCost(i) {
         let clampedLevel = Math.clamped(i, 0, this._spellPointCost.length - 1)
         if (clampedLevel !== i )
-            console.error(`spellpoints5e - Spell level ${i} out of bounds: has no spell point cost`);
+            console.error(`${VSpellPoints.ID} - Spell level ${i} out of bounds: has no spell point cost`);
         return this._spellPointCost[clampedLevel];
     }
 
@@ -352,7 +260,7 @@ class VSpellPointsCalcs {
     static getSpellpointsByLevel(i) {
         let clampedLevel = Math.clamped(i, 0, this._spellPointsByLevelTable.length - 1)
         if (clampedLevel !== i )
-            console.error(`spellpoints5e - Character level ${i} out of bounds: has no maximum spell points set`);
+            console.error(`${VSpellPoints.ID} - Character level ${i} out of bounds: has no maximum spell points set`);
         return this._spellPointsByLevelTable[clampedLevel];
     }
 
@@ -365,31 +273,26 @@ class VSpellPointsCalcs {
         let maxSpellPointsTooltip = "Your maximum number of spell points"
 
         // read from actor
+        /** @type Resource */
         let userData = data;
         if (!userData) userData = {}
 
-        let maxSpellPoints = userData.maxPoints;
-        let tempMax = userData.tempMax > 0 ? userData.tempMax : "";
-        let tempPoints = userData.tempPoints > 0 ? userData.tempPoints : "";
-        let currentSpellpoints = userData.currentPoints;
+        let maxSpellPoints = userData.points.max;
+        let tempMax = userData.points.addMax > 0 ? userData.points.addMax : "";
+        let tempPoints = userData.points.temp > 0 ? userData.points.temp : "";
+        let currentSpellpoints = userData.points.value;
 
         let [combinedLevel, allCastingLevels] = VSpellPointsCalcs.getCombinedSpellCastingLevel(actor.data.data.classes)
-
-        // maxSpellPointsTooltip += `&#013;Because the combined spell casting level from all your classes is: ${combinedLevel}`
-        // maxSpellPointsTooltip += `&#013;&#013;Spellcasting level by class: `
-        // Object.entries(allCastingLevels).forEach(([name, level]) => {
-        //     maxSpellPointsTooltip += `&#013;${name.capitalize()}: ${level}`
-        // })
 
         let levelsTooltip = ""
         Object.entries(allCastingLevels).forEach(([name, level], index) => {
             levelsTooltip += `
-                    <tbody><tr>
-                      <td class="attribution-value ${index === 0 ? 'mode-5' : 'mode-2'}">
-                        ${level}
-                      </td>
-                      <td class="attribution-label">${name.capitalize()}</td>
-                    </tr>`
+                <tbody><tr>
+                  <td class="attribution-value ${index === 0 ? 'mode-5' : 'mode-2'}">
+                    ${level}
+                  </td>
+                  <td class="attribution-label">${name.capitalize()}</td>
+                </tr>`
         })
 
         // TODO: define as template
@@ -397,7 +300,7 @@ class VSpellPointsCalcs {
         <li class="attribute spellpoints">
             <h4 class="attribute-name box-title">${spellPointsNameText}</h4>
             <div class="attribute-value multiple attributable"> 
-                <input name="${VSpellPoints.spellPointsPath()}.currentPoints" type="text" value="${currentSpellpoints ?? ""}" placeholder="10" data-dtype="Number"> <!-- title="${currentSpellPointsTooltip}" -->
+                <input name="${VSpellPoints.resourcesPath()}.points.value" type="text" value="${currentSpellpoints ?? ""}" placeholder="10" data-dtype="Number"> <!-- title="${currentSpellPointsTooltip}" -->
                 <span class="sep"> / </span>
                 <span class="attribute-max" title="${maxSpellPointsTooltip}"> ${maxSpellPoints} </span>
                 <div class="property-attribution tooltip">
@@ -414,8 +317,8 @@ class VSpellPointsCalcs {
             </div>
             <!-- Temp and Max override
             <footer class="attribute-footer">
-                <input name="${VSpellPoints.spellPointsPath()}.tempPoints" type="text" class="temphp" placeholder="+${spellPointsTempText}" value="${tempPoints}" data-dtype="Number">
-                <input name="${VSpellPoints.spellPointsPath()}.tempMax" type="text" class="temphp" placeholder="+${spellPointsTempMaxText}" value="${tempMax}" data-dtype="Number">
+                <input name="${VSpellPoints.resourcesPath()}.points.temp" type="text" class="temphp" placeholder="+${spellPointsTempText}" value="${tempPoints}" data-dtype="Number">
+                <input name="${VSpellPoints.resourcesPath()}.points.addMax" type="text" class="temphp" placeholder="+${spellPointsTempMaxText}" value="${tempMax}" data-dtype="Number">
             </footer> -->
 
         </li>`;
@@ -432,7 +335,7 @@ Hooks.once('devModeReady', ({ registerPackageDebugFlag }) => {
  * Once the game has initialized, set up our module
  */
 Hooks.once('ready', () => {
-    console.log('spellpoints5e | Initializing module')
+    console.log(`${VSpellPoints.ID} | Initializing module`)
     VSpellPoints.initialize();
 
     // TODO: find better place for the functions
@@ -469,9 +372,10 @@ Hooks.once('ready', () => {
         }
 
         if ('warlock' in actor.data.data.classes) {
-            VSpellPoints.log("Actor is a Warlock (Will be ignored for now)")
+            VSpellPoints.log("Actor is a Warlock")
             return true;
         }
+        return false;
     }
 
     // check if module was enabled in the settings
@@ -494,12 +398,12 @@ Hooks.once('ready', () => {
         let actor = actorsheet.object;
         if (!isCharacter(actor)) return;
 
-        // initialize spellpoints data in the actor, if not yet present
-        const {defaultPoints, defaultUses} = VSpellPointsData.initPoints(actor)
-
         VSpellPoints.log("++++++++++++++++++")
         VSpellPoints.log("render actorsheet", actorsheet)
         VSpellPoints.log("renderActor: ", foundry.utils.deepClone(actor))
+
+        // initialize spellpoints data in the actor, if not yet present
+        const { defaultResources } = VSpellPointsData.initPoints(actor)
 
         // removes non spellcasters and single-class warlocks
         VSpellPoints.log("Render Sheet: warlock, spellcaster:", isWarlock(actor), isSpellcaster(actor))
@@ -509,16 +413,12 @@ Hooks.once('ready', () => {
         VSpellPoints.log("It's a caster! - Level " + VSpellPointsCalcs.getCombinedSpellCastingLevel(actor.data.data.classes)[0])
         let attributesList = html.find(".sheet-header").find(".attributes")
 
-        let savedPointData = VSpellPointsData.getPoints(actor) ?? {}
-        let savedUsesData = VSpellPointsData.getUses(actor) ?? {}
+        let savedResourcesData = VSpellPointsData.getResources(actor) ?? {}
+        /** @type Resource */
+        let resourcesData = foundry.utils.isObjectEmpty(savedResourcesData) ? defaultResources : savedResourcesData;
+        VSpellPoints.log("Using pointData: ", resourcesData)
 
-        let pointData = foundry.utils.isObjectEmpty(savedPointData) ? defaultPoints : savedPointData;
-        let usesData = foundry.utils.isObjectEmpty(savedUsesData) ? defaultUses : savedUsesData;
-
-        VSpellPoints.log("Using pointData: ", pointData)
-        VSpellPoints.log("Using usesData: ", usesData)
-
-        let spellPointsAttribute = VSpellPointsCalcs.createSpellPointsInfo(actor, pointData, actorsheet);
+        let spellPointsAttribute = VSpellPointsCalcs.createSpellPointsInfo(actor, resourcesData, actorsheet);
         let newAttribute = attributesList.append(spellPointsAttribute)
 
         // activate all listeners for the new html
@@ -541,7 +441,7 @@ Hooks.once('ready', () => {
                 let newSlotInfo = `
                     <span> ${VSpellPointsCalcs.getSpellPointCost(i)} </span>
                     <span class="sep"> / </span>
-                    <span class="spell-max">${pointData.currentPoints ?? 0} P</span>`
+                    <span class="spell-max">${resourcesData?.points?.value ?? 0} P</span>`
 
                 // ignore cantrips
                 if (i === 0) newSlotInfo = " - "
@@ -562,12 +462,12 @@ Hooks.once('ready', () => {
                 let usesInfo = `
                     <div class="spell-uses" title="remaining uses">
                         (<input type="text" 
-                                name="${VSpellPoints.usesPath()}.${spellStr}.value" 
-                                value="${usesData[spellStr].value}" placeholder="0" 
+                                name="${VSpellPoints.resourcesPath()}.uses.${spellStr}.value" 
+                                value="${resourcesData.uses[spellStr]?.value ?? 0}" placeholder="0" 
                                 data-dtype="Number">
                         <span class="sep"> / </span>
                         <span class="spell-max">
-                            ${usesData[spellStr].max}
+                            ${ resourcesData.uses[spellStr].max}
                         </span>)
                     </div><!-- <div class="flex-gap" style="display: inline-flex; flex-wrap: wrap"></div><div class="flex-gap" style="display: inline-flex; flex-wrap: wrap"></div> -->`
                 $(this).after(usesInfo);
@@ -606,15 +506,18 @@ Hooks.once('ready', () => {
 
         // TODO: Show red warning box if it can't be cast
 
-        // only apply on spells
-        if (item?.data?.type !== "spell") {
-            VSpellPoints.log("not using a spell")
+        // only apply on spells that cost resources
+        if (item?.data?.type !== "spell"
+            || item?.labels?.level === "Cantrip"
+            || item?.data?.data?.preparation?.mode === "atwill"
+            || item?.data?.data?.preparation?.mode === "innate") {
+            VSpellPoints.log("not using a resource spell")
             return;
         }
 
         VSpellPoints.log(dialog, html, object)
-        let usesData = VSpellPointsData.getUses(actor)
-        let pointData = VSpellPointsData.getPoints(actor)
+        /** @type Resource */
+        let resourcesData = VSpellPointsData.getResources(actor);
 
         // change consume spell slot text
         let consumeText = $(html)
@@ -653,12 +556,12 @@ Hooks.once('ready', () => {
                     new_text += `${textParts[0]} ${textParts[1]} `
 
                     // add spellpoint cost and spellpoints left
-                    new_text += `(${cost} / ${pointData.currentPoints ?? 0} Spell Points)`
+                    new_text += `(${cost} / ${resourcesData.points?.value ?? 0} Spell Points)`
 
                     // add uses left
                     if (spellLevel >= 6) {
-                        let uses = usesData[`spell${spellLevel}`].value
-                        let usesMax = usesData[`spell${spellLevel}`].max
+                        let uses = resourcesData.uses[`spell${spellLevel}`].value;
+                        let usesMax = resourcesData.uses[`spell${spellLevel}`].max
                         new_text += ` (${usesMax} / ${uses} uses)`
                     }
                     $(this).text(new_text);
@@ -680,18 +583,18 @@ Hooks.once('ready', () => {
         // call normal spell recovery
         let oldUpdate = oldRestSpellRecovery.apply(this, arguments);
 
-        let actorSpellpoints = VSpellPointsData.getPoints(this);
-        let actorUses = VSpellPointsData.getUses(this);
+        /** @type Resource */
+        let actorResources = VSpellPointsData.getResources(this)
 
         // and then add my own update: reset current, tempPoints, tempMax and uses
-        if (actorSpellpoints.currentPoints !== undefined && actorSpellpoints.maxPoints !== undefined)
-            oldUpdate[`${VSpellPoints.spellPointsPath()}.${VSpellPointsData.vars.currentPoints}`] = actorSpellpoints.maxPoints
-            oldUpdate[`${VSpellPoints.spellPointsPath()}.${VSpellPointsData.vars.tempPoints}`] = 0
-            oldUpdate[`${VSpellPoints.spellPointsPath()}.${VSpellPointsData.vars.tempMax}`] = 0
+        if (actorResources.points.value !== undefined && actorResources.points.max !== undefined)
+            oldUpdate[`${VSpellPoints.resourcesPath()}.points.value`] = actorResources.points.max;
+            oldUpdate[`${VSpellPoints.resourcesPath()}.points.temp`] = 0;
+            oldUpdate[`${VSpellPoints.resourcesPath()}.points.addMax`] = 0;
             // reset uses for over 6th level spells
-            Object.entries(actorUses).forEach( ([spellLevel, data]) => {
-                VSpellPoints.log(`${VSpellPoints.usesPath()}.${spellLevel}.value`, data.max)
-                oldUpdate[`${VSpellPoints.usesPath()}.${spellLevel}.value`] = data.max
+            Object.entries(actorResources.uses).forEach( ([spellLevel, data]) => {
+                VSpellPoints.log(`${VSpellPoints.resourcesPath()}.uses.${spellLevel}.value`, data.max)
+                oldUpdate[`${VSpellPoints.resourcesPath()}.uses.${spellLevel}.value`] = data.max
             })
 
         return oldUpdate;
@@ -729,8 +632,8 @@ Hooks.once('ready', () => {
 
         VSpellPoints.log(oldUpdate)
 
-        let actorSpellpoints = VSpellPointsData.getPoints(actor);
-        let actorSpellUses = VSpellPointsData.getUses(actor);
+        /** @type Resource */
+        let actorResources = VSpellPointsData.getResources(actor);
 
         // string of spelllevel to number
         let spellLevel = parseInt("" + spellLevelStr.replace("spell", ""))
@@ -742,14 +645,14 @@ Hooks.once('ready', () => {
         let spellCost = VSpellPointsCalcs.getSpellPointCost(spellLevel)
         VSpellPoints.log("spelllevel: " + spellLevel)
         VSpellPoints.log("spellCost: " + spellCost)
-        VSpellPoints.log("currentPoint: " + actorSpellpoints.currentPoints)
-        VSpellPoints.log("maxSpellLevel: " + actorSpellpoints.maxSpellLevel)
-        if (spellLevel >= usesSpellLevel) VSpellPoints.log(`usesRemaining-${spellLevelStr}: ` + actorSpellUses[spellLevelStr].value)
+        VSpellPoints.log("currentPoint: " + actorResources.points.value)
+        VSpellPoints.log("maxSpellLevel: " + actorResources.maxLevel)
+        if (spellLevel >= usesSpellLevel) VSpellPoints.log(`usesRemaining-${spellLevelStr}: ` + actorResources.uses[spellLevelStr].value)
 
         // error if no or not enough spell points are left, or if level is too high, or if uses remaining
-        let currentNotOk = !spellCost || !actorSpellpoints.currentPoints || actorSpellpoints.currentPoints < spellCost
-        let spellLevelNotOk = !spellLevel || !actorSpellpoints.maxSpellLevel || spellLevel > actorSpellpoints.maxSpellLevel
-        let noUsesRemaining = spellLevel >= usesSpellLevel ? actorSpellUses[spellLevelStr].value === 0 : false
+        let currentNotOk = !spellCost || !actorResources.points.value || actorResources.points.value < spellCost
+        let spellLevelNotOk = !spellLevel || !actorResources.maxLevel || spellLevel > actorResources.maxLevel
+        let noUsesRemaining = spellLevel >= usesSpellLevel ? actorResources.uses[spellLevelStr].value === 0 : false
 
         VSpellPoints.log(`Enough points: ${!currentNotOk}, level ok: ${!spellLevelNotOk}, uses ok: ${!noUsesRemaining}`)
 
@@ -770,13 +673,10 @@ Hooks.once('ready', () => {
 
         // if can be cast: use spell points
         // => adjust oldUpdate data to include the new current spellpoints
-        oldUpdate.actorUpdates[`${VSpellPoints.spellPointsPath()}.${VSpellPointsData.vars.currentPoints}`] = Math.max(actorSpellpoints.currentPoints - spellCost, 0);
+        oldUpdate.actorUpdates[`${VSpellPoints.resourcesPath()}.points.value`] = Math.max(actorResources.points.value - spellCost, 0);
 
         // update uses of the spell
-        if (spellLevel >= usesSpellLevel) oldUpdate.actorUpdates[`${VSpellPoints.usesPath()}.${spellLevelStr}.value`] = actorSpellUses[spellLevelStr].value - 1
-
-        // TODO: TEMP POINTS (not for now)
-
+        if (spellLevel >= usesSpellLevel) oldUpdate.actorUpdates[`${VSpellPoints.resourcesPath()}.uses.${spellLevelStr}.value`] = actorResources.uses[spellLevelStr].value - 1
         return oldUpdate;
     }
 })
