@@ -1,9 +1,13 @@
 class VSpellPoints {
-    static ID = 'dnd5e-variant-spellpoints';
+    static ID_old = 'dnd5e-variant-spellpoints';
+
+    // TODO: rename module
+    static ID = 'spellpoints5e';
 
     static FLAGS = {
-        POINTS: 'spellpoints',
-        USES: 'uses'
+        POINTS: 'points', // was: 'spellpoints'
+        USES: 'uses',
+        RESOURCES: 'resources' // TODO: will replace points and uses
     }
 
     static spellPointsPath() {
@@ -18,10 +22,9 @@ class VSpellPoints {
     }
 
     static SETTINGS = {
-        TOGGLEON: 'spellPointsToggle'
+        TOGGLEON: 'spellPointsToggle',
+        TABLESETTINGS: 'tablesButton'
     }
-
-
 
     static initialize() {
         // reload not needed
@@ -86,6 +89,7 @@ class VSpellPointsData {
         currentPoints: "currentPoints"
     }
 
+    // TODO:  group by points and spellLevel
     /** @type Vars */
     static dataTemplate = {
         maxPoints: 0,
@@ -93,6 +97,26 @@ class VSpellPointsData {
         tempMax: 0,
         tempPoints: 0,
         currentPoints: 0,
+    }
+
+    // TODO: dataTemplate2
+    static resourcesTemplate = {
+        // max spell level
+        maxLevel: 0,
+        // tracking spell points
+        points: {
+            max: 0,
+            value: 0,
+            addMax: 0,
+            temp: 0
+        },
+        // tracking uses
+        uses: {
+            "spell6": {max: 0, value: 0},
+            "spell7": {max: 0, value: 0},
+            "spell8": {max: 0, value: 0},
+            "spell9": {max: 0, value: 0},
+        }
     }
 
     /** @typedef {{
@@ -239,8 +263,6 @@ class VSpellPointsData {
     // TODO: think about how to do it
     // static updateGlobalSpellPointsTable(updateData) {}
     // static updateGlobalSpellCostTable(updateData) {}
-
-
 }
 
 class VSpellPointsCalcs {
@@ -293,7 +315,7 @@ class VSpellPointsCalcs {
     static getSpellPointCost(i) {
         let clampedLevel = Math.clamped(i, 0, this._spellPointCost.length - 1)
         if (clampedLevel !== i )
-            console.error(`dnd5e-variant-spellpoints - Spell level ${i} out of bounds: has no spell point cost`);
+            console.error(`spellpoints5e - Spell level ${i} out of bounds: has no spell point cost`);
         return this._spellPointCost[clampedLevel];
     }
 
@@ -330,7 +352,7 @@ class VSpellPointsCalcs {
     static getSpellpointsByLevel(i) {
         let clampedLevel = Math.clamped(i, 0, this._spellPointsByLevelTable.length - 1)
         if (clampedLevel !== i )
-            console.error(`dnd5e-variant-spellpoints - Character level ${i} out of bounds: has no maximum spell points set`);
+            console.error(`spellpoints5e - Character level ${i} out of bounds: has no maximum spell points set`);
         return this._spellPointsByLevelTable[clampedLevel];
     }
 
@@ -410,7 +432,7 @@ Hooks.once('devModeReady', ({ registerPackageDebugFlag }) => {
  * Once the game has initialized, set up our module
  */
 Hooks.once('ready', () => {
-    console.log('dnd5e-variant-spellpoints | Initializing module')
+    console.log('spellpoints5e | Initializing module')
     VSpellPoints.initialize();
 
     // TODO: find better place for the functions

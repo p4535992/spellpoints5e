@@ -1,5 +1,5 @@
 {
-  "name": "dnd5e-variant-spellpoints",
+  "name": "spellpoints5e",
   "version": "1.0.0",
   "description": "Replaces the spellbook of the character sheet with the rules for the Spell Points variant. ",
   "main": "index.js",
