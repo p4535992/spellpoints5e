@@ -15,7 +15,7 @@ This module implements the [Variant Spell Points Rule](https://www.dndbeyond.com
 
 ## Installation Instructions
 
-> [optional] Install the [libWrapper](https://foundryvtt.com/packages/lib-wrapper) module to avoid conflicts.
+> :arrow_right: [optional] Install the [libWrapper](https://foundryvtt.com/packages/lib-wrapper) module to avoid conflicts.
 
 1. In `Configuration and Setup` go to `Add-on Modules` 
 2. Click on `Install Module`
