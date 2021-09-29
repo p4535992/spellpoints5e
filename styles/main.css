@@ -2,6 +2,13 @@
     position: absolute !important;
 }
 
+.attribute .attributable .tooltip thead tr th:first-child,
+.attribute .attributable .tooltip tbody tr td:first-child {
+    min-width: 1em !important;
+    max-width: 5em !important;
+    white-space: nowrap !important;
+}
+
 .attribute.spellpoints .attribute-max {
     padding: 1px 7px !important;
 }

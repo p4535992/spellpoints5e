@@ -27,7 +27,7 @@ class VSpellPoints {
     }
 
     static TEMPLATES = {
-        POINTS: `modules/${this.ID}/templates/main.hbs`
+        ATTRIBUTE: `modules/${this.ID}/templates/attribute.hbs`
     }
 
     static SETTINGS = {
@@ -38,6 +38,10 @@ class VSpellPoints {
     static initialize() {
         // reload not needed
         const debouncedReload = foundry.utils.debounce(window.location.reload, 100);
+
+        // load templates
+        delete _templateCache[this.TEMPLATES.ATTRIBUTE];
+        loadTemplates([this.TEMPLATES.ATTRIBUTE]);
 
         // Register a world setting
         game.settings.register(this.ID, this.SETTINGS.TOGGLEON, {
@@ -271,7 +275,7 @@ class VSpellPointsCalcs {
     static getCombinedSpellCastingLevel (classes) {
         let allCastingLevels = {}
         Object.entries(classes).forEach( ([className, classProps]) =>  {
-            allCastingLevels[className] = this.getSpellCastingLevel(classProps.spellcasting.progression, classProps.levels);
+            allCastingLevels[className.capitalize()] = this.getSpellCastingLevel(classProps.spellcasting.progression, classProps.levels);
         });
         return [Object.values(allCastingLevels).reduce((a, b) => a + b, 0), allCastingLevels];
     }
@@ -326,65 +330,29 @@ class VSpellPointsCalcs {
         return this._spellPointsByLevelTable[clampedLevel];
     }
 
-    static createSpellPointsInfo(actor, data) {
-        // TODO: with localization
-        const spellPointsNameText = "Spell Points";
-        const spellPointsTempText = "Temp"
-        const spellPointsTempMaxText = "Max"
-        const currentSpellPointsTooltip = "Spell points you can currently spend"
-        let maxSpellPointsTooltip = "Your maximum number of spell points"
-
+    static async createSpellPointsInfo(actor, data) {
         // read from actor
         /** @type Resource */
         let userData = data;
         if (!userData) userData = {}
 
-        let maxSpellPoints = userData.points.max;
         let tempMax = userData.points.addMax > 0 ? userData.points.addMax : "";
         let tempPoints = userData.points.temp > 0 ? userData.points.temp : "";
-        let currentSpellpoints = userData.points.value;
 
         let [combinedLevel, allCastingLevels] = VSpellPointsCalcs.getCombinedSpellCastingLevel(actor.data.data.classes)
 
-        let levelsTooltip = ""
-        Object.entries(allCastingLevels).forEach(([name, level], index) => {
-            levelsTooltip += `
-                <tbody><tr>
-                  <td class="attribution-value ${index === 0 ? 'mode-5' : 'mode-2'}">
-                    ${level}
-                  </td>
-                  <td class="attribution-label">${name.capitalize()}</td>
-                </tr>`
-        })
+        // TODO: with localization
+        const template_data =  {
+            spellPointsNameText: "Spell Points",
+            maxSpellPointsTooltip: "Your maximum number of spell points",
+            currentSpellpoints: userData.points.value,
+            maxSpellPoints: userData.points.max,
+            combinedLevel,
+            allCastingLevels,
+            resourcePath: VSpellPoints.resourcesPath()
+        }
 
-        // TODO: define as template
-        let spellPointsInfo = `
-        <li class="attribute spellpoints">
-            <h4 class="attribute-name box-title">${spellPointsNameText}</h4>
-            <div class="attribute-value multiple attributable"> 
-                <input name="${VSpellPoints.resourcesPath()}.points.value" type="text" value="${currentSpellpoints ?? ""}" placeholder="10" data-dtype="Number"> <!-- title="${currentSpellPointsTooltip}" -->
-                <span class="sep"> / </span>
-                <span class="attribute-max" title="${maxSpellPointsTooltip}"> ${maxSpellPoints} </span>
-                <div class="property-attribution tooltip">
-                  <table>
-                    <thead>Spellcasting Levels: </thead>
-                    <tbody>
-                     ${levelsTooltip}
-                    <tr class="total">
-                      <td class="attribution-value">${combinedLevel}</td>
-                      <td class="attribution-label">Total</td>
-                    </tr>
-                  </tbody></table>
-                </div>
-            </div>
-            <!-- Temp and Max override
-            <footer class="attribute-footer">
-                <input name="${VSpellPoints.resourcesPath()}.points.temp" type="text" class="temphp" placeholder="+${spellPointsTempText}" value="${tempPoints}" data-dtype="Number">
-                <input name="${VSpellPoints.resourcesPath()}.points.addMax" type="text" class="temphp" placeholder="+${spellPointsTempMaxText}" value="${tempMax}" data-dtype="Number">
-            </footer> -->
-
-        </li>`;
-
+        let spellPointsInfo = await renderTemplate(VSpellPoints.TEMPLATES.ATTRIBUTE, template_data);
         return spellPointsInfo;
     }
 }
@@ -426,66 +394,73 @@ Hooks.once('ready', () => {
         let attributesList = html.find(".sheet-header").find(".attributes")
 
         let savedResourcesData = VSpellPointsData.getResources(actor) ?? {}
+
         /** @type Resource */
         let actorResources = foundry.utils.isObjectEmpty(savedResourcesData) ? defaultResources : savedResourcesData;
         VSpellPoints.log("Using pointData: ", actorResources)
 
+        // create new attribute display in the header
         let spellPointsAttribute = VSpellPointsCalcs.createSpellPointsInfo(actor, actorResources, actorsheet);
-        let newAttribute = attributesList.append(spellPointsAttribute)
-
-        // activate all listeners for the new html
-        actorsheet.activateListeners($(newAttribute).find(".spellpoints"))
+        spellPointsAttribute.then((spellPointsInfo) => {
+            let newAttribute = attributesList.append(spellPointsInfo);
+            actorsheet.activateListeners($(newAttribute).find(".spellpoints"))
+        })
 
         // change the slot info to spell point cost and remaining spell points
         // and filter out warlock spells
         let itemsHeader = html
             .find(".tab.spellbook")
-            .find(".items-header.spellbook-header")
-            .filter(function () {
-                // the name attribute marks a row with pact spells
-                return ($(this).find('[name="data.spells.pact.value"]').length === 0);
-            });
+            .find(".items-header.spellbook-header");
 
+        // add point cost and remaining spellpoints indicator to every spell category
+        // also add remaining uses if 6th level or higher
         itemsHeader.find("h3").addClass("points-variant")
         itemsHeader
             .find(".spell-slots")
             .each(function (i) {
-                let newSlotInfo = `
-                    <span> ${VSpellPointsCalcs.getSpellPointCost(i)} </span>
-                    <span class="sep"> / </span>
-                    <span class="spell-max">${actorResources?.points?.value ?? 0} P</span>`
+                let dataLevel = $(this).find(".spell-max[data-level]").attr("data-level")
 
-                // ignore cantrips
-                if (i === 0) newSlotInfo = " - "
+                // skip spells without limited uses
+                let newSlotInfo;
+                let newUsesInfo;
+                if (!dataLevel || !dataLevel.includes("spell") ) {
+                    newSlotInfo = " - "
+                    newUsesInfo = ""
+                } else {
+                    let spellLevel = parseInt(dataLevel.replace("spell",""));
+                    newSlotInfo = `
+                        <span> ${VSpellPointsCalcs.getSpellPointCost(spellLevel)} </span>
+                        <span class="sep"> / </span>
+                        <span class="spell-max">${actorResources?.points?.value ?? 0} P</span>`;
+
+                    // for uses: skip spells under lvl 6
+                    if (spellLevel < 6) newUsesInfo = ""
+                    else {
+                        newUsesInfo = `
+                            <div class="spell-uses" title="remaining uses">
+                                (<input type="text" 
+                                        name="${VSpellPoints.resourcesPath()}.uses.${dataLevel}.value" 
+                                        value="${actorResources.uses[dataLevel]?.value ?? 0}" placeholder="0" 
+                                        data-dtype="Number">
+                                <span class="sep"> / </span>
+                                <span class="spell-max">
+                                    ${actorResources.uses[dataLevel].max}
+                                </span>)
+                            </div>`
+                    }
+                }
+                // add uses indicator to the left of point cost indicator
+                $(newUsesInfo).insertBefore($(this))
 
                 $(this).attr('title', 'cost / remaining spell points');
                 $(this).removeClass("spell-slots")
                 $(this).addClass("spell-points")
                 $(this).html(newSlotInfo)
+
+                actorsheet.activateListeners($(this).parent())
             });
 
-        itemsHeader
-            .find("h3")
-            .each(function (i) {
-                // ignore spells below 6th level
-                if (i < 6) return true;
-
-                let spellStr = `spell${i}`
-                let usesInfo = `
-                    <div class="spell-uses" title="remaining uses">
-                        (<input type="text" 
-                                name="${VSpellPoints.resourcesPath()}.uses.${spellStr}.value" 
-                                value="${actorResources.uses[spellStr]?.value ?? 0}" placeholder="0" 
-                                data-dtype="Number">
-                        <span class="sep"> / </span>
-                        <span class="spell-max">
-                            ${actorResources.uses[spellStr].max}
-                        </span>)
-                    </div><!-- <div class="flex-gap" style="display: inline-flex; flex-wrap: wrap"></div><div class="flex-gap" style="display: inline-flex; flex-wrap: wrap"></div> -->`
-                $(this).after(usesInfo);
-            });
-
-        // set new min-width if it hasn't been set yet
+        // set new min-width for the sheet if it hasn't been set yet
         let currentMinWidth = html.css("min-width").replace("px", "")
         if (currentMinWidth !== "auto" && currentMinWidth < actorsheet.options.width + 50) {
             html.css("min-width", `${actorsheet.options.width + 50}px`)
@@ -583,6 +558,9 @@ Hooks.once('ready', () => {
             })
     })
 
+    /**
+     * LibWrapper
+     */
     if (typeof libWrapper === 'function') {
         VSpellPoints.log("Libwrapper found")
 
@@ -663,7 +641,7 @@ function override_getUsageUpdates(oldUsageUpdate) {
         }, this)
         // use normal function if variant is disabled or because of other factors
         // do default behaviour if no spell level is used or module is deactivated
-        VSpellPoints.log("_getUsageUpdates: warlock, spellcaster, consumeSpellLevel:", VSpellPointsData.isWarlock(actor), VSpellPointsData.isSpellcaster(actor), consumeSpellLevel)
+        VSpellPoints.log("_getUsageUpdates: warlock, spellcaster:", VSpellPointsData.isWarlock(actor), VSpellPointsData.isSpellcaster(actor))
         if (!VSpellPointsData.ModuleEnabled() || !consumeSpellLevel || !VSpellPointsData.isCharacter(actor) || !VSpellPointsData.isSpellcaster(actor)) {
             return oldUsageUpdate.apply(this, arguments);
         }

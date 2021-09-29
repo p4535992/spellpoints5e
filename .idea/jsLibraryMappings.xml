@@ -3,6 +3,5 @@
   <component name="JavaScriptLibraryMappings">
     <file url="file://$PROJECT_DIR$" libraries="{spellpoints5e/node_modules}" />
     <file url="PROJECT" libraries="{Foundry Types, foundry dnd5e types, spellpoints5e/node_modules}" />
-    <excludedPredefinedLibrary name="app/node_modules" />
   </component>
 </project>
