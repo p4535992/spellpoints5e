@@ -619,7 +619,6 @@ Hooks.once('ready', () => {
 
 function override_getRestSpellRecovery (oldRestSpellRecovery) {
     return function({recoverPact = true, recoverSpells = true}) {
-        console.log(this)
         VSpellPoints.log("recover pact:", recoverPact, "recover spells:", recoverSpells)
         VSpellPoints.log("_getRestSpellRecovery: warlock, spellcaster", VSpellPointsData.isWarlock(this), VSpellPointsData.isSpellcaster(this))
 
