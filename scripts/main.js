@@ -21,9 +21,6 @@ class VSpellPoints {
     }
 
     static initialize() {
-        // reload not needed
-        const debouncedReload = foundry.utils.debounce(window.location.reload, 100);
-
         // load templates
         delete _templateCache[this.TEMPLATES.ATTRIBUTE];
         loadTemplates([this.TEMPLATES.ATTRIBUTE]);
@@ -60,10 +57,10 @@ class VSpellPointsData {
      *      temp: number
      *  },
      *  uses: {
-     *      spell6: {max: number, value: number},
-     *      spell7: {max: number, value: number},
-     *      spell8: {max: number, value: number},
-     *      spell9: {max: number, value: number}
+     *      spell6: {max: number, value: number, override: number},
+     *      spell7: {max: number, value: number, override: number},
+     *      spell8: {max: number, value: number, override: number},
+     *      spell9: {max: number, value: number, override: number}
      *  }
      * }} Resource
      * */
@@ -80,11 +77,12 @@ class VSpellPointsData {
             temp: 0
         },
         // tracking uses
+        // TODO: logic to use override
         uses: {
-            spell6: {max: 0, value: 0},
-            spell7: {max: 0, value: 0},
-            spell8: {max: 0, value: 0},
-            spell9: {max: 0, value: 0},
+            spell6: {max: 0, value: 0, override: null},
+            spell7: {max: 0, value: 0, override: null},
+            spell8: {max: 0, value: 0, override: null},
+            spell9: {max: 0, value: 0, override: null},
         }
     }
 
@@ -217,6 +215,30 @@ class VSpellPointsData {
             return false;
         }
         return true
+    }
+
+    /**
+     * Handle enabling editing for a spell point override value
+     * @param {MouseEvent} event    The originating click event
+     * @private
+     */
+    static async _onSpellUsesOverride (event) {
+        const span = event.currentTarget.parentElement;
+        const level = span.dataset.level; // TODO: write spelllevel into "data-level"
+        const override = this.data.flags[VSpellPoints.ID].resources.uses[level].override || span.dataset.slots; // TODO: write uses into "data-slots"
+        const input = document.createElement("INPUT");
+        input.type = "text";
+        input.name = `${VSpellPoints.resourcesPath()}.uses.${level}.override`;
+        input.value = override;
+        input.placeholder = span.dataset.slots;
+        input.dataset.dtype = "Number";
+
+        // Replace the HTML
+        const parent = span.parentElement;
+        parent.removeChild(span);
+        parent.removeChild(parent.lastChild); // remove closing bracket
+        parent.appendChild(input);
+        parent.appendChild(document.createTextNode(")"));
     }
 
     // TODO: think about how to do it
@@ -411,6 +433,17 @@ Hooks.once('ready', () => {
                     <span> ${VSpellPointsCalcs.getSpellPointCost(spellLevel)} </span>
                     <span class="sep"> / </span>
                     <span class="spell-max">${actorResources?.points?.value ?? 0} P</span>`;
+                `
+                <div class="spell-slots">
+                            <input type="text" name="data.spells.spell5.value" value="2" placeholder="0" data-dtype="Number">
+                            <span class="sep"> / </span>
+                            <span class="spell-max" data-level="spell5" data-slots="2">
+                                2
+                                <a class="slot-max-override" title="Override slots">
+                                    <i class="fas fa-edit"></i>
+                                </a>
+                            </span>
+                        </div>`
 
                 // for uses: skip spells under lvl 6
                 if (spellLevel < 6) newUsesInfo = ""
@@ -422,8 +455,11 @@ Hooks.once('ready', () => {
                                     value="${actorResources.uses[dataLevel]?.value ?? 0}" placeholder="0" 
                                     data-dtype="Number">
                             <span class="sep"> / </span>
-                            <span class="spell-max">
-                                ${actorResources.uses[dataLevel].max}
+                            <span class="spell-max" data-level="${dataLevel}" data-slots="${actorResources.uses[dataLevel].override ?? actorResources.uses[dataLevel].max}">
+                                ${actorResources.uses[dataLevel].override ?? actorResources.uses[dataLevel].max}
+                                <a class="points-max-override" title="Override points">
+                                    <i class="fas fa-edit"></i>
+                                </a>
                             </span>)
                         </div>`
                 }
@@ -439,6 +475,8 @@ Hooks.once('ready', () => {
 
                 actorsheet.activateListeners($(this).parent())
             });
+        // TODO: make it work
+        html.find('.tab.spellbook').find('.points-max-override').click(VSpellPointsData._onSpellUsesOverride.bind(actor));
 
         // set new min-width for the sheet if it hasn't been set yet
         let currentMinWidth = html.css("min-width").replace("px", "")
@@ -528,8 +566,8 @@ Hooks.once('ready', () => {
                     // add uses left
                     if (spellLevel >= 6) {
                         let uses = actorResources?.uses[`spell${spellLevel}`]?.value ?? 0;
-                        let usesMax = actorResources?.uses[`spell${spellLevel}`]?.max ?? 0;
-                        new_text += ` (${usesMax} / ${uses} uses)`
+                        let usesMax = actorResources?.uses[`spell${spellLevel}`]?.override ?? actorResources?.uses[`spell${spellLevel}`]?.max ?? 0;
+                        new_text += uses === 1 ? ` (${uses} use left)` : ` (${uses} uses left)`
                     }
                     $(this).text(new_text);
                 }
@@ -599,7 +637,7 @@ function override_getRestSpellRecovery (oldRestSpellRecovery) {
         // reset uses for over 6th level spells
         Object.entries(actorResources?.uses ?? {}).forEach(([spellLevel, data]) => {
             VSpellPoints.log(`${VSpellPoints.resourcesPath()}.uses.${spellLevel}.value`, data.max)
-            oldUpdate[`${VSpellPoints.resourcesPath()}.uses.${spellLevel}.value`] = data.max
+            oldUpdate[`${VSpellPoints.resourcesPath()}.uses.${spellLevel}.value`] = data.override ?? data.max
         })
 
         return oldUpdate;
