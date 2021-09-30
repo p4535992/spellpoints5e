@@ -224,8 +224,8 @@ class VSpellPointsData {
      */
     static async _onSpellUsesOverride (event) {
         const span = event.currentTarget.parentElement;
-        const level = span.dataset.level; // TODO: write spelllevel into "data-level"
-        const override = this.data.flags[VSpellPoints.ID].resources.uses[level].override || span.dataset.slots; // TODO: write uses into "data-slots"
+        const level = span.dataset.level;
+        const override = this.data.flags[VSpellPoints.ID].resources.uses[level].override || span.dataset.slots;
         const input = document.createElement("INPUT");
         input.type = "text";
         input.name = `${VSpellPoints.resourcesPath()}.uses.${level}.override`;
@@ -238,7 +238,7 @@ class VSpellPointsData {
         parent.removeChild(span);
         parent.removeChild(parent.lastChild); // remove closing bracket
         parent.appendChild(input);
-        parent.appendChild(document.createTextNode(")"));
+        parent.appendChild(document.createTextNode(")")); // add closing bracket
     }
 
     // TODO: think about how to do it
