@@ -77,7 +77,6 @@ class VSpellPointsData {
             temp: 0
         },
         // tracking uses
-        // TODO: logic to use override
         uses: {
             spell6: {max: 0, value: 0, override: null},
             spell7: {max: 0, value: 0, override: null},
@@ -241,7 +240,7 @@ class VSpellPointsData {
         parent.appendChild(document.createTextNode(")")); // add closing bracket
     }
 
-    // TODO: think about how to do it
+    // TODO: editable tables
     // static updateGlobalSpellPointsTable(updateData) {}
     // static updateGlobalSpellCostTable(updateData) {}
 }
@@ -304,7 +303,7 @@ class VSpellPointsCalcs {
     // which spell levels can only be cast once per long rest
     static lockedSpellLevels = [6, 7, 8, 9];
 
-    // TODO: editable? (in Settings? Or in the character itself? Only gm or also player?)
+    // TODO: editable
     // starting with character level 0
     // [max points, max spell level]
     static _spellPointsByLevelTable = [
@@ -464,7 +463,7 @@ Hooks.once('ready', () => {
 
                 actorsheet.activateListeners($(this).parent())
             });
-        // TODO: make it work
+        // adds onclick function to change the max uses amount
         html.find('.tab.spellbook').find('.points-max-override').click(VSpellPointsData._onSpellUsesOverride.bind(actor));
 
         // set new min-width for the sheet if it hasn't been set yet
@@ -498,16 +497,17 @@ Hooks.once('ready', () => {
         // filters out npcs, non spellcasters and single-class warlocks
         if (!VSpellPointsData.isCharacter(actor) || !VSpellPointsData.isSpellcaster(actor)) return;
 
-        // TODO: Show red warning box if it can't be cast
-
         // only apply on spells that cost resources
         if (item?.data?.type !== "spell"
             || item?.labels?.level === "Cantrip"
             || item?.data?.data?.preparation?.mode === "atwill"
-            || item?.data?.data?.preparation?.mode === "innate") {
+            || item?.data?.data?.preparation?.mode === "innate"
+            || html.find("#ability-use-form").find(".form-group").find("select[name=level]").length === 0){
             VSpellPoints.log("not using a resource spell")
             return;
         }
+
+        // TODO: Show red warning box if it can't be cast
 
         VSpellPoints.log(dialog, html, object)
         /** @type Resource */
