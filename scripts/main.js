@@ -433,17 +433,6 @@ Hooks.once('ready', () => {
                     <span> ${VSpellPointsCalcs.getSpellPointCost(spellLevel)} </span>
                     <span class="sep"> / </span>
                     <span class="spell-max">${actorResources?.points?.value ?? 0} P</span>`;
-                `
-                <div class="spell-slots">
-                            <input type="text" name="data.spells.spell5.value" value="2" placeholder="0" data-dtype="Number">
-                            <span class="sep"> / </span>
-                            <span class="spell-max" data-level="spell5" data-slots="2">
-                                2
-                                <a class="slot-max-override" title="Override slots">
-                                    <i class="fas fa-edit"></i>
-                                </a>
-                            </span>
-                        </div>`
 
                 // for uses: skip spells under lvl 6
                 if (spellLevel < 6) newUsesInfo = ""
