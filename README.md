@@ -27,6 +27,7 @@ This module implements the [Variant Spell Points Rule](https://www.dndbeyond.com
 - **Settings to adjust spell costs and max points per level (GM only)**
 - **Localization**
 - **Compatability with other modules:**
-  - Combat HUD: Works, but doesn't show spell points or uses on HUD
+  - :red_square: Tidy5e Sheet: Incompatible, because both edit the actor sheet
+  - :yellow_square: Combat HUD: Works, but doesn't show spell points or uses on the HUD
      - Replace spell slot indicator below spells with `spellpoint cost / remaining spellpoints`
      - Use Spell slot indicator for remaining uses for 6th level and higher spells
