@@ -1,5 +1,7 @@
 class VSpellPoints {
     static ID = 'spellpoints5e';
+    static isActive = true;
+    static unsupportedModules = ["tidy5e-sheet"]
 
     static FLAGS = {
         POINTS: 'points', // legacy
@@ -25,6 +27,11 @@ class VSpellPoints {
         delete _templateCache[this.TEMPLATES.ATTRIBUTE];
         loadTemplates([this.TEMPLATES.ATTRIBUTE]);
 
+        // disable module if unsupported module is active
+        if (this.unsupportedModuleActive()) {
+            this.isActive = false;
+        }
+
         // Register a world setting
         game.settings.register(this.ID, this.SETTINGS.TOGGLEON, {
             name: "Use Variant: Spell Points? ",
@@ -44,6 +51,19 @@ class VSpellPoints {
                 console.log(this.ID, '|', ...args);
             }
         } catch (e) {}
+    }
+
+    // check if unsupported module is enabled
+    static unsupportedModuleActive() {
+        let unsupported = false;
+        this.unsupportedModules.forEach( function (name) {
+            if (game.modules.get(name)?.active) {
+                console.error(`${VSpellPoints.ID} | module ${name} is active, which is not supported yet, disabling ${VSpellPoints.ID}`)
+                ui.notifications.error(`${VSpellPoints.ID}: module ${name} is active, which is not supported yet, disabling ${VSpellPoints.ID}`);
+                unsupported = true;
+            }
+        })
+        return unsupported;
     }
 }
 
@@ -206,9 +226,9 @@ class VSpellPointsData {
     }
 
     // check if module was enabled in the settings
-    static ModuleEnabled() {
+    static moduleEnabled() {
         const useModule = game.settings.get(VSpellPoints.ID,VSpellPoints.SETTINGS.TOGGLEON);
-        if (!useModule) {
+        if (!useModule || !VSpellPoints.isActive) {
             VSpellPoints.log('Variant Spellpoints not used')
             return false;
         }
@@ -379,7 +399,7 @@ Hooks.once('ready', () => {
         VSpellPoints.log("RENDER", actorsheet, html, _options)
 
         // prevent execution if variant is disabled
-        if (!VSpellPointsData.ModuleEnabled()) return;
+        if (!VSpellPointsData.moduleEnabled()) return;
 
         let actor = actorsheet.object;
         if (!VSpellPointsData.isCharacter(actor)) return;
@@ -475,7 +495,7 @@ Hooks.once('ready', () => {
 
     Hooks.on("renderLongRestDialog", (dialog, html, options) => {
         // prevent execution if variant is disabled
-        if (!VSpellPointsData.ModuleEnabled()) return;
+        if (!VSpellPointsData.moduleEnabled()) return;
 
         let text = $(html).find(".dialog-content").children("p").text().replace('spell slots', 'spell points');
         $(html).find(".dialog-content").children("p").text(text);
@@ -485,7 +505,7 @@ Hooks.once('ready', () => {
     // replace the spell slot reminder in the ability use dialog
     Hooks.on("renderAbilityUseDialog", (dialog, html, object) => {
         // prevent execution if variant is disabled
-        if (!VSpellPointsData.ModuleEnabled()) return;
+        if (!VSpellPointsData.moduleEnabled()) return;
 
         VSpellPoints.log(dialog, html, object)
         let item = dialog.item
@@ -612,7 +632,7 @@ function override_getRestSpellRecovery (oldRestSpellRecovery) {
         VSpellPoints.log("_getRestSpellRecovery: warlock, spellcaster", VSpellPointsData.isWarlock(this), VSpellPointsData.isSpellcaster(this))
 
         // use normal function if variant usage is disabled, no spells are being recovered, its an NPC or its not a spellcaster
-        if (!VSpellPointsData.ModuleEnabled() || !recoverSpells || !VSpellPointsData.isCharacter(this) || !VSpellPointsData.isSpellcaster(this)) {
+        if (!VSpellPointsData.moduleEnabled() || !recoverSpells || !VSpellPointsData.isCharacter(this) || !VSpellPointsData.isSpellcaster(this)) {
             return oldRestSpellRecovery.apply(this, arguments);
         }
 
@@ -653,7 +673,7 @@ function override_getUsageUpdates(oldUsageUpdate) {
         // use normal function if variant is disabled or because of other factors
         // do default behaviour if no spell level is used or module is deactivated
         VSpellPoints.log("_getUsageUpdates: warlock, spellcaster:", VSpellPointsData.isWarlock(actor), VSpellPointsData.isSpellcaster(actor))
-        if (!VSpellPointsData.ModuleEnabled() || !consumeSpellLevel || !VSpellPointsData.isCharacter(actor) || !VSpellPointsData.isSpellcaster(actor)) {
+        if (!VSpellPointsData.moduleEnabled() || !consumeSpellLevel || !VSpellPointsData.isCharacter(actor) || !VSpellPointsData.isSpellcaster(actor)) {
             return oldUsageUpdate.apply(this, arguments);
         }
 
