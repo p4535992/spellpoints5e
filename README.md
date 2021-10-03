@@ -1,4 +1,4 @@
-> :warning: **BETA VERSION - PROBABLY STILL HAS BUGS**: Only use on testing setups!
+> :warning: **BETA VERSION - PROBABLY STILL HAS BUGS**
 
 # Variant Spells Rule for dnd5e
 
