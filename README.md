@@ -20,7 +20,7 @@ This module implements the [Variant Spell Points Rule](https://www.dndbeyond.com
 1. In `Configuration and Setup` go to `Add-on Modules` 
 2. Click on `Install Module`
 3. Paste the following URL into the `Manifest URL` text box at the bottom: 
-   - https://github.com/Mary-Usagi/dnd5e-variant-spellpoints/releases/latest/download/module.json
+   - https://github.com/Mary-Usagi/spellpoints5e/releases/latest/download/module.json
 
 
 ## TODO
