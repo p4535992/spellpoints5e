@@ -23,7 +23,7 @@
         }
     ],
     "packs": [],
-    "system": [],
+    "system": ["dnd5e"],
     "dependencies": [],
     "socket": true,
     "manifest": "WILL BE AUTO REPLACED",

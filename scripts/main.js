@@ -124,7 +124,6 @@ class VSpellPointsData {
             // persist in actor
             actor.setFlag(VSpellPoints.ID, VSpellPoints.FLAGS.RESOURCES, updateResources);
         } else if (actorResources.points.max !== points || actorResources.maxLevel !== level) {
-            // TODO (maybe): Put into update actor hook
             VSpellPoints.log(`${VSpellPoints.ID} | Updating spell points data for: ${actor.name}`)
 
             // Update Resources
@@ -168,7 +167,7 @@ class VSpellPointsData {
         return actor.getFlag(VSpellPoints.ID, VSpellPoints.FLAGS.RESOURCES);
     }
 
-    // chech if actor is a player character
+    // check if actor is a player character
     static isCharacter(actor) {
         if (actor.data?.type !== "character") {
             VSpellPoints.log("Actor is not a player")
@@ -376,6 +375,7 @@ Hooks.once('ready', () => {
 
     // modify actorsheet after its rendered to show the spell points
     Hooks.on("renderActorSheet5e", (actorsheet, html, _options) => {
+        VSpellPoints.log("++++++++++++++++++")
         VSpellPoints.log("RENDER", actorsheet, html, _options)
 
         // prevent execution if variant is disabled
@@ -384,9 +384,8 @@ Hooks.once('ready', () => {
         let actor = actorsheet.object;
         if (!VSpellPointsData.isCharacter(actor)) return;
 
-        VSpellPoints.log("++++++++++++++++++")
-        VSpellPoints.log("render actorsheet", actorsheet)
-        VSpellPoints.log("renderActor: ", foundry.utils.deepClone(actor))
+
+        VSpellPoints.log("render actorsheet", actorsheet, "renderActor: ", foundry.utils.deepClone(actor))
 
         // initialize spellpoints data in the actor, if not yet present
         const defaultResources = VSpellPointsData.initPoints(actor)
@@ -478,7 +477,6 @@ Hooks.once('ready', () => {
         // prevent execution if variant is disabled
         if (!VSpellPointsData.ModuleEnabled()) return;
 
-        // TODO: Sachen nicht von text abhängig machen
         let text = $(html).find(".dialog-content").children("p").text().replace('spell slots', 'spell points');
         $(html).find(".dialog-content").children("p").text(text);
     })
@@ -536,30 +534,38 @@ Hooks.once('ready', () => {
             .find("select[name='level']")
             .find("option")
             .each(function (i) {
-                let textParts = $(this).text().split(" ")
                 let spellValue = $(this).attr("value")
 
                 let isPact = spellValue === 'pact'
-
                 if (isPact) {
                     // do nothing
-                } else {
-                    let spellLevel = parseInt(spellValue)
-                    let cost = VSpellPointsCalcs.getSpellPointCost(spellLevel)
-                    let new_text = ""
-                    new_text += `${textParts[0]} ${textParts[1]} `
-
-                    // add spellpoint cost and spellpoints left
-                    new_text += `(${cost} / ${actorResources.points?.value ?? 0} Spell Points)`
-
-                    // add uses left
-                    if (spellLevel >= 6) {
-                        let uses = actorResources?.uses[`spell${spellLevel}`]?.value ?? 0;
-                        let usesMax = actorResources?.uses[`spell${spellLevel}`]?.override ?? actorResources?.uses[`spell${spellLevel}`]?.max ?? 0;
-                        new_text += uses === 1 ? ` (${uses} use left)` : ` (${uses} uses left)`
-                    }
-                    $(this).text(new_text);
+                    return true;
                 }
+
+                let spellLevel = parseInt(spellValue)
+                let cost = VSpellPointsCalcs.getSpellPointCost(spellLevel)
+
+                // https://stackoverflow.com/questions/13627308/add-st-nd-rd-and-th-ordinal-suffix-to-a-number
+                function ordinal_suffix_of(i) {
+                    var j = i % 10,
+                        k = i % 100;
+                    if (j === 1 && k !== 11) return i + "st";
+                    if (j === 2 && k !== 12) return i + "nd";
+                    if (j === 3 && k !== 13) return i + "rd";
+                    return i + "th";
+                }
+                let new_text = ordinal_suffix_of(spellLevel) + " Level "
+
+                // add spellpoint cost and spellpoints left
+                new_text += `(${cost} / ${actorResources.points?.value ?? 0} Spell Points)`
+
+                // add uses left
+                if (spellLevel >= 6) {
+                    let uses = actorResources?.uses[`spell${spellLevel}`]?.value ?? 0;
+                    let usesMax = actorResources?.uses[`spell${spellLevel}`]?.override ?? actorResources?.uses[`spell${spellLevel}`]?.max ?? 0;
+                    new_text += uses === 1 ? ` (${uses} use left)` : ` (${uses} uses left)`
+                }
+                $(this).text(new_text);
             })
     })
 
@@ -687,10 +693,7 @@ function override_getUsageUpdates(oldUsageUpdate) {
 
         // get point cost of spell level
         let spellCost = VSpellPointsCalcs.getSpellPointCost(spellLevel)
-        VSpellPoints.log("spelllevel: " + spellLevel)
-        VSpellPoints.log("spellCost: " + spellCost)
-        VSpellPoints.log("currentPoint: " + actorResources?.points?.value)
-        VSpellPoints.log("maxSpellLevel: " + actorResources?.maxLevel)
+        VSpellPoints.log("spelllevel: " + spellLevel, "spellCost: " + spellCost, "currentPoint: " + actorResources?.points?.value, "maxSpellLevel: " + actorResources?.maxLevel)
         if (spellLevel >= usesSpellLevel) VSpellPoints.log(`usesRemaining-${spellLevelStr}: ` + actorResources?.uses[spellLevelStr]?.value ?? 0)
 
         // error if no or not enough spell points are left, or if level is too high, or if uses remaining
