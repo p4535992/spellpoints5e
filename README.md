@@ -1,13 +1,13 @@
-# Variant Spells Rule for dnd5e
+# Spell Points for dnd5e
 
 This module implements the [Variant Spell Points Rule](https://www.dndbeyond.com/sources/dmg/dungeon-masters-workshop#VariantSpellPoints) as described in the Dungeon Master's Guide. 
 
-* Adds a Spell Point tracking system to every actor that is a spellcaster
-  * Displays the remaining spell points etc. in the sheet header for easy access
-* shows point costs and remaining uses in the spellbook
-* Automatically resets spell points on long rest and consumes them when a spell is used
-* Works with multi-classing
-* NPC's and non-spellcasters still use spell slots
+* adds a spell point tracking system to every player actor
+  * displays the remaining spell points etc. in the sheet header for easy access
+  * shows point costs and remaining uses in the spellbook
+* automatically resets spell points on long rest and consumes them when a spell is used
+* works with multi-classing
+* NPC's, non-spellcasters and warlocks still use spell slots
 
 ![Screenshot](images/screenshot.jpg)
 

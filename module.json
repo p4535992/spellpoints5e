@@ -1,9 +1,8 @@
 {
     "name": "spellpoints5e",
-    "title": "Variant Spells Rule for dnd5e",
-    "description": "(Only for dnd5e) Replaces the spellbook of the character sheet with the rules for the spell points variant defined in the Dungeon Master's Guide. ",
+    "title": "Spell Points for dnd5e",
+    "description": "(Only for dnd5e) Replaces spell slots on the player sheets with the spell points variant defined in the Dungeon Master's Guide. ",
     "author": "Mary Usagi",
-    "authors": [],
     "url": "WILL BE AUTO REPLACED",
     "flags": {},
     "version": "WILL BE AUTO REPLACED",
