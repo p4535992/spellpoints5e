@@ -1,5 +1,3 @@
-> :warning: **BETA VERSION - PROBABLY STILL HAS BUGS**
-
 # Variant Spells Rule for dnd5e
 
 This module implements the [Variant Spell Points Rule](https://www.dndbeyond.com/sources/dmg/dungeon-masters-workshop#VariantSpellPoints) as described in the Dungeon Master's Guide. 
@@ -29,5 +27,3 @@ This module implements the [Variant Spell Points Rule](https://www.dndbeyond.com
 - **Compatability with other modules:**
   - :red_square: **Tidy5e Sheet**: Incompatible, because it also edits the actor sheet
   - :yellow_square: **Combat HUD**: Works, but doesn't show spell points or uses on the HUD
-     - Replace spell slot indicator below spells with `spellpoint cost / remaining spellpoints`
-     - Use Spell slot indicator for remaining uses for 6th level and higher spells
