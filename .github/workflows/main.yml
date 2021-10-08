@@ -46,7 +46,7 @@ jobs:
         with:
           file: module.json
           field: download
-          value: https://github.com/${{ github.repository }}/releases/latest/download/module.zip
+          value: https://github.com/${{ github.repository }}/releases/download/${{ steps.get_version.outputs.version }}/module.zip
 
       - name: Update module.json url
         uses: jossef/action-set-json-field@v1
