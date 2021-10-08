@@ -237,7 +237,7 @@ class VSpellPointsData {
 
     /**
      * Handle enabling editing for a spell point override value
-     * @param {MouseEvent} event    The originating click event
+     * @param {MouseEvent} event The originating click event
      * @private
      */
     static async _onSpellUsesOverride (event) {
