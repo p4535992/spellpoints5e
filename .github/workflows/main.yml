@@ -53,7 +53,7 @@ jobs:
         with:
           file: module.json
           field: url
-          value: https://github.com/${{ github.repository }}/tree/master'
+          value: https://github.com/${{ github.repository }}/tree/master
 
       # Create a zip file with all files required by the module to add to the release
       - name: Zip Files
