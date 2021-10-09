@@ -25,5 +25,5 @@ This module implements the [Variant Spell Points Rule](https://www.dndbeyond.com
 - **Settings to adjust spell costs and max points per level (GM only)**
 - **Localization**
 - **Compatability with other modules:**
-  - :red_square: **Tidy5e Sheet**: Incompatible, because it also edits the actor sheet
+  - :red_square: **Tidy5e Sheet**: Incompatible for now, because it also edits the actor sheet
   - :yellow_square: **Combat HUD**: Works, but doesn't show spell points or uses on the HUD
