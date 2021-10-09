@@ -470,16 +470,22 @@ Hooks.once('ready', () => {
                             </span>)
                         </div>`
                 }
+                let parent = $(this).parent().find(".item-name")
+                if (parent.length === 0) {
+                    parent = $(this).parent().parent().find(".item-name")
+                }
+
+
 
                 // add uses indicator to the left of point cost indicator
-                $(newUsesInfo).insertBefore($(this))
-
                 $(this).parent().find("h3").addClass("points-variant")
                 $(this).attr('title', 'cost / remaining spell points');
                 $(this).removeClass("spell-slots")
                 $(this).addClass("spell-points")
                 $(this).html(newSlotInfo)
 
+                $(newUsesInfo).detach().appendTo(parent)
+                $(this).detach().appendTo(parent)
                 actorsheet.activateListeners($(this).parent())
             });
         // adds onclick function to change the max uses amount
