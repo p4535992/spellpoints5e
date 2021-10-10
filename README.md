@@ -14,9 +14,11 @@ This module implements the [Variant Spell Points Rule](https://www.dndbeyond.com
 
 ## Compatibility with Custom Sheets
 
-If you are using a module that modifies the default character sheet and the remaining and max spellpoints are not shown in the header (as seen in the screenshot above), go to the settings and set it to display the spellpoints under "Resources". That could fix it. 
+If you are using a module that modifies the default character sheet and the remaining and max spellpoints are not shown in the header (as seen in the screenshot above), go to the settings and set it to display the spellpoints under `Resources`. That **could** fix it. 
 
-See below for known issues!
+See below for known incompatibilities!
+
+If your sheet doesn't work and is not listed below you can open an issue, but I probably won't fix it soon, as that's not my priority. Sorry!
 
 ![Resources](images/resources.jpg)
 
@@ -35,6 +37,6 @@ See below for known issues!
 - **Settings to adjust spell costs and max points per level (GM only)**
 - **Localization**
 - **Compatability with other modules:**
-  - :red_square: **Tidy5e Sheet**: Doesn't display remaining / max spell points yet
+  - :red_square: **Tidy5e Sheet**: Doesn't display remaining / max spell points yet. I'm working on it, but will probably take some time. 
   - :green_square: **Compact D&D Beyond-like**: Works, just go to settings and set the display location to `Resources`
   - :yellow_square: **Combat HUD**: Works, but doesn't show spell points or uses on the HUD
