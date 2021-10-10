@@ -18,6 +18,8 @@ If you are using a module that modifies the default character sheet and the rema
 
 See below for known incompatibilities!
 
+If your sheet doesn't work and is not listed below you can open an issue, but I probably won't fix it soon, as that's not my priority. Sorry!
+
 ![Resources](images/resources.jpg)
 
 
