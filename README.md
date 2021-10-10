@@ -16,7 +16,7 @@ This module implements the [Variant Spell Points Rule](https://www.dndbeyond.com
 
 If you are using a module that modifies the default character sheet and the remaining and max spellpoints are not shown in the header (as seen in the screenshot above), go to the settings and set it to display the spellpoints under "Resources". That could fix it. 
 
-See below for known issues!
+See below for known incompatibilities!
 
 ![Resources](images/resources.jpg)
 
