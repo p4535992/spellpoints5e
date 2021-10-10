@@ -18,6 +18,9 @@ This module implements the [Variant Spell Points Rule](https://www.dndbeyond.com
 > 
 > See below for known issues!
 
+![Resources](images/resources.jpg)
+
+
 ## Installation Instructions
 
 > :arrow_right: [optional] Install the [libWrapper](https://foundryvtt.com/packages/lib-wrapper) module to avoid conflicts.
@@ -33,5 +36,5 @@ This module implements the [Variant Spell Points Rule](https://www.dndbeyond.com
 - **Localization**
 - **Compatability with other modules:**
   - :red_square: **Tidy5e Sheet**: Doesn't display remaining / max spell points yet
+  - :green_square: **Compact D&D Beyond-like**: Works, just go to settings and set the display location to `Resources`
   - :yellow_square: **Combat HUD**: Works, but doesn't show spell points or uses on the HUD
-  - :green_square: **Compact D&D Beyond-like**: Go to settings and set the display location to `Resources`  
