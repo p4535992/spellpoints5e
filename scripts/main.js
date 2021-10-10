@@ -1,7 +1,7 @@
 class VSpellPoints {
     static ID = 'spellpoints5e';
     static isActive = true;
-    static unsupportedModules = ["tidy5e-sheet"]
+    static unsupportedModules = []
 
     static FLAGS = {
         POINTS: 'points', // legacy
@@ -19,7 +19,13 @@ class VSpellPoints {
 
     static SETTINGS = {
         TOGGLEON: 'spellPointsToggle',
+        DISPLAY: 'headerOrResourceToggle',
         TABLESETTINGS: 'tablesButton'
+    }
+
+    static DISPLAY_CHOICE = {
+        header: "Header",
+        resources: 'Resources'
     }
 
     static initialize() {
@@ -40,6 +46,16 @@ class VSpellPoints {
             config: true,        // This specifies that the setting appears in the configuration view
             default: false,      // The default value for the setting
             type: Boolean
+        });
+
+        // Register a client setting
+        game.settings.register(this.ID, this.SETTINGS.DISPLAY, {
+            name: "Where to display Spell Points:",
+            hint: `Select where on the character sheet the current spell point value should be shown. `,
+            scope: "world",      // This specifies a world-level setting
+            config: true,        // This specifies that the setting appears in the configuration view
+            default: 'Header',      // The default value for the setting
+            choices: Object.values(this.DISPLAY_CHOICE)
         });
     }
 
@@ -355,7 +371,7 @@ class VSpellPointsCalcs {
         return this._spellPointsByLevelTable[clampedLevel];
     }
 
-    static async createSpellPointsInfo(actor, data) {
+    static async createSpellPointsInfo(actor, data, asResource= false) {
         // read from actor
         /** @type Resource */
         let userData = data;
@@ -374,8 +390,15 @@ class VSpellPointsCalcs {
             maxSpellPoints: userData.points.max,
             combinedLevel,
             allCastingLevels,
-            resourcePath: VSpellPoints.resourcesPath()
+            asResource,
+            resourcePath: VSpellPoints.resourcesPath(),
         }
+        // TODO: tidy5e
+        let tidy5e = `<div class="resource-value multiple">
+            <input class="res-value" name="flags.spellpoints5e.resources.points.value" type="text" value="" data-dtype="Number" placeholder="0" maxlength="3">
+            <span class="sep">/</span>
+            <input class="res-max" name="flags.spellpoints5e.resources.points.max" type="text" value="" data-dtype="Number" placeholder="0" maxlength="3">
+        </div>`
 
         let spellPointsInfo = await renderTemplate(VSpellPoints.TEMPLATES.ATTRIBUTE, template_data);
         return spellPointsInfo;
@@ -417,6 +440,10 @@ Hooks.once('ready', () => {
         // change header of sheet
         VSpellPoints.log("It's a caster! - Level " + VSpellPointsCalcs.getCombinedSpellCastingLevel(actor.data.data.classes)[0])
         let attributesList = html.find(".sheet-header").find(".attributes")
+        let resourcesList = html.find(".sheet-body .center-pane").find("ul.attributes")
+        if (resourcesList.length === 0) {
+            resourcesList = html.find(".sheet-main-wrapper .sheet-main").find("ul.attributes")
+        }
 
         let savedResourcesData = VSpellPointsData.getResources(actor) ?? {}
 
@@ -424,12 +451,21 @@ Hooks.once('ready', () => {
         let actorResources = foundry.utils.isObjectEmpty(savedResourcesData) ? defaultResources : savedResourcesData;
         VSpellPoints.log("Using pointData: ", actorResources)
 
-        // create new attribute display in the header
-        let spellPointsAttribute = VSpellPointsCalcs.createSpellPointsInfo(actor, actorResources, actorsheet);
-        spellPointsAttribute.then((spellPointsInfo) => {
-            let newAttribute = attributesList.append(spellPointsInfo);
-            actorsheet.activateListeners($(newAttribute).find(".spellpoints"))
-        })
+        // create new attribute display in the header or the resource block
+        // TODO: shorten this line
+        if (Object.values(VSpellPoints.DISPLAY_CHOICE)[game.settings.get(VSpellPoints.ID,VSpellPoints.SETTINGS.DISPLAY)] === VSpellPoints.DISPLAY_CHOICE.resources) {
+            let spellPointsAttribute = VSpellPointsCalcs.createSpellPointsInfo(actor, actorResources, true);
+            spellPointsAttribute.then((spellPointsInfo) => {
+                let newAttribute = resourcesList.append(spellPointsInfo);
+                actorsheet.activateListeners($(newAttribute).find(".spellpoints"))
+            })
+        } else {
+            let spellPointsAttribute = VSpellPointsCalcs.createSpellPointsInfo(actor, actorResources, false);
+            spellPointsAttribute.then((spellPointsInfo) => {
+                let newAttribute = attributesList.append(spellPointsInfo);
+                actorsheet.activateListeners($(newAttribute).find(".spellpoints"))
+            })
+        }
 
         // add point cost and remaining spellpoints indicator to every spell category
         // also add remaining uses if 6th level or higher
@@ -470,12 +506,15 @@ Hooks.once('ready', () => {
                             </span>)
                         </div>`
                 }
-                let parent = $(this).parent().find(".item-name")
-                if (parent.length === 0) {
-                    parent = $(this).parent().parent().find(".item-name")
+                // account for multiple sheets that set different classnames etc.
+                let parent;
+                let parentOptions = ["spell-level-slots", "item-name"]
+                for (let option of parentOptions) {
+                    parent = $(this).parent().find(`.${option}`)
+                    if (parent.length !== 0) break;
+                    parent = $(this).parent().parent().find(`.${option}`)
+                    if (parent.length !== 0) break;
                 }
-
-
 
                 // add uses indicator to the left of point cost indicator
                 $(this).parent().find("h3").addClass("points-variant")
