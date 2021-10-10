@@ -35,6 +35,6 @@ See below for known incompatibilities!
 - **Settings to adjust spell costs and max points per level (GM only)**
 - **Localization**
 - **Compatability with other modules:**
-  - :red_square: **Tidy5e Sheet**: Doesn't display remaining / max spell points yet
+  - :red_square: **Tidy5e Sheet**: Doesn't display remaining / max spell points yet. I'm working on it, but will probably take some time. 
   - :green_square: **Compact D&D Beyond-like**: Works, just go to settings and set the display location to `Resources`
   - :yellow_square: **Combat HUD**: Works, but doesn't show spell points or uses on the HUD
