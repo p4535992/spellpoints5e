@@ -705,7 +705,7 @@ function override_getRestSpellRecovery (oldRestSpellRecovery) {
 }
 
 function override_getUsageUpdates(oldUsageUpdate) {
-    return function ({consumeQuantity, consumeRecharge, consumeResource, consumeSpellLevel, consumeUsage}) {
+    return function ({consumeQuantity, consumeRecharge, consumeResource, consumeSpellLevel, consumeUsage, ...args}) {
         let actor = this.parent;
 
         VSpellPoints.log("_getUsageUpdates", {
@@ -715,16 +715,26 @@ function override_getUsageUpdates(oldUsageUpdate) {
             consumeSpellLevel,
             consumeUsage
         }, this)
+
+        /* consume Resource on non-spells. TODO: will maybe be changed in the future */
+        // check if a resource gets consumed and that resource is the spell points
+        let isResource = false;
+        if(consumeResource && this.data?.data?.consume?.target?.includes(VSpellPoints.resourcesPath())) {
+            isResource = true;
+        }
+
         // use normal function if variant is disabled or because of other factors
         // do default behaviour if no spell level is used or module is deactivated
         VSpellPoints.log("_getUsageUpdates: warlock, spellcaster:", VSpellPointsData.isWarlock(actor), VSpellPointsData.isSpellcaster(actor))
-        if (!VSpellPointsData.moduleEnabled() || !consumeSpellLevel || !VSpellPointsData.isCharacter(actor) || !VSpellPointsData.isSpellcaster(actor)) {
+        if (!isResource && (!VSpellPointsData.moduleEnabled() || !consumeSpellLevel || !VSpellPointsData.isCharacter(actor) || !VSpellPointsData.isSpellcaster(actor))) {
+            VSpellPoints.log("Spell points not affected")
             return oldUsageUpdate.apply(this, arguments);
         }
 
         // Do default behaviour if spell is cast with pact magic
         const isPactMagic = consumeSpellLevel === "pact"
         if (isPactMagic) {
+            VSpellPoints.log("Spell points not affected")
             return oldUsageUpdate.apply(this, arguments);
         }
 
@@ -750,21 +760,47 @@ function override_getUsageUpdates(oldUsageUpdate) {
         if (!actorResources || foundry.utils.isObjectEmpty(actorResources))
             actorResources = VSpellPointsData.initPoints(actor);
 
-        // string of spelllevel to number
-        let spellLevel = parseInt("" + spellLevelStr.replace("spell", ""))
-
         // define when spells start to cost uses
         let usesSpellLevel = 6
 
-        // get point cost of spell level
-        let spellCost = VSpellPointsCalcs.getSpellPointCost(spellLevel)
-        VSpellPoints.log("spelllevel: " + spellLevel, "spellCost: " + spellCost, "currentPoint: " + actorResources?.points?.value, "maxSpellLevel: " + actorResources?.maxLevel)
-        if (spellLevel >= usesSpellLevel) VSpellPoints.log(`usesRemaining-${spellLevelStr}: ` + actorResources?.uses[spellLevelStr]?.value ?? 0)
+        let spellCost;
+        let currentNotOk;
+        let spellLevelNotOk;
+        let noUsesRemaining;
+        let spellLevel;
+        // normal use or used as resource?
+        if (isResource) {
+            spellCost = 0;
+            spellLevel = 0;
+            // is the resource a spell slot or the points?
+            if (this.data?.data?.consume?.target?.includes("uses")) {
+                spellLevelStr = this.data?.data?.consume?.target?.replace(VSpellPoints.resourcesPath(), "").replace(".uses.", "").replace(".value", "")
+                spellLevel = parseInt("" + spellLevelStr?.replace("spell", "")) || 0
 
-        // error if no or not enough spell points are left, or if level is too high, or if uses remaining
-        let currentNotOk = !spellCost || !actorResources?.points?.value || actorResources?.points?.value < spellCost
-        let spellLevelNotOk = !spellLevel || !actorResources?.maxLevel || spellLevel > actorResources?.maxLevel
-        let noUsesRemaining = spellLevel >= usesSpellLevel ? actorResources?.uses[spellLevelStr]?.value === 0 : false
+                currentNotOk = false;
+                spellLevelNotOk = !spellLevel || !actorResources?.maxLevel || spellLevel > actorResources?.maxLevel;
+                noUsesRemaining = spellLevel >= usesSpellLevel ? actorResources?.uses[spellLevelStr]?.value === 0 : false;
+            } else {
+                spellCost = this.data?.data?.consume?.amount;
+
+                currentNotOk = !spellCost || !actorResources?.points?.value || actorResources?.points?.value < spellCost;
+                spellLevelNotOk = false;
+                noUsesRemaining = false;
+            }
+        } else {
+            // string of spell level to number
+            spellLevel = parseInt("" + spellLevelStr?.replace("spell", "")) || 0
+
+            // get point cost of spell level
+            spellCost = VSpellPointsCalcs.getSpellPointCost(spellLevel)
+            VSpellPoints.log("spelllevel: " + spellLevel, "spellCost: " + spellCost, "currentPoint: " + actorResources?.points?.value, "maxSpellLevel: " + actorResources?.maxLevel)
+            if (spellLevel >= usesSpellLevel) VSpellPoints.log(`usesRemaining-${spellLevelStr}: ` + actorResources?.uses[spellLevelStr]?.value ?? 0)
+
+            // error if no or not enough spell points are left, or if level is too high, or if uses remaining
+            currentNotOk = !spellCost || !actorResources?.points?.value || actorResources?.points?.value < spellCost
+            spellLevelNotOk = !spellLevel || !actorResources?.maxLevel || spellLevel > actorResources?.maxLevel;
+            noUsesRemaining = spellLevel >= usesSpellLevel ? actorResources?.uses[spellLevelStr]?.value === 0 : false
+        }
 
         VSpellPoints.log(`Enough points: ${!currentNotOk}, level ok: ${!spellLevelNotOk}, uses ok: ${!noUsesRemaining}`)
 
