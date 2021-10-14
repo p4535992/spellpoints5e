@@ -13,7 +13,7 @@ This module implements the [Variant Spell Points Rule](https://www.dndbeyond.com
 ![Screenshot](images/screenshot.jpg)
 
 ## Actor specific setting
-If you want to enable or disable spell points for only a few actors, trusted players and GMs can do that by clicking on the small book icon in the sheet header (as seen in the screenshot below) and selecting between default behaviour (what the GM set in the global settings), enabling or disabling. 
+If you want to enable or disable spell points for only a few actors, trusted players and GMs can do that by clicking on the small book icon in the sheet header (as seen in the screenshot below) and selecting between default behaviour (what the GM set in the global settings), explicitly using *spell slots* or explicitly using *spell points*. 
 
 ![actor specific setting](images/actorSpecific.jpg)
 
