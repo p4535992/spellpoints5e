@@ -12,6 +12,12 @@ This module implements the [Variant Spell Points Rule](https://www.dndbeyond.com
 
 ![Screenshot](images/screenshot.jpg)
 
+## Actor specific setting
+If you want to enable or disable spell points for only a few actors, trusted players and GMs can do that by clicking on the small book icon in the sheet header (as seen in the screenshot below) and selecting between default behaviour (what the GM set in the global settings), enabling or disabling. 
+
+![actor specific setting](images/actorSpecific.jpg)
+
+
 ## Compatibility with Custom Sheets
 
 If you are using a module that modifies the default character sheet and the remaining and max spellpoints are not shown in the header (as seen in the screenshot above), go to the settings and set it to display the spellpoints under `Resources`. That **could** fix it. 
