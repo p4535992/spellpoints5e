@@ -6,7 +6,14 @@ class VSpellPoints {
     static FLAGS = {
         POINTS: 'points', // legacy
         USES: 'uses', // legacy
-        RESOURCES: 'resources'
+        RESOURCES: 'resources',
+        ENABLED: 'enabled'
+    }
+
+    static STATUSCHOICES = {
+        enabled: "enabled",
+        disabled: "disabled",
+        default: "default"
     }
 
     static resourcesPath() {
@@ -203,6 +210,13 @@ class VSpellPointsData {
         return actor.getFlag(VSpellPoints.ID, VSpellPoints.FLAGS.RESOURCES);
     }
 
+    static getPointsEnabled(actor) {
+        return actor.getFlag(VSpellPoints.ID, VSpellPoints.FLAGS.ENABLED);
+    }
+    static setPointsEnabled(actor, enable) {
+        return actor.setFlag(VSpellPoints.ID, VSpellPoints.FLAGS.ENABLED, enable);
+    }
+
     // check if actor is a player character
     static isCharacter(actor) {
         if (actor.data?.type !== "character") {
@@ -249,6 +263,24 @@ class VSpellPointsData {
             return false;
         }
         return true
+    }
+
+    /**
+     * Returns whether spell points were manually enabled for this specific character
+     *
+     * Returns undefined if default/no choice, true if manually enabled, false if manually disabled
+     * @param actor
+     * @returns {boolean|undefined}
+     */
+    static moduleManuallyEnabled(actor) {
+        const actorSetting = VSpellPointsData.getPointsEnabled(actor);
+        switch (actorSetting) {
+            case undefined: return undefined;
+            case VSpellPoints.STATUSCHOICES.enabled: return true;
+            case VSpellPoints.STATUSCHOICES.disabled: return false;
+            case VSpellPoints.STATUSCHOICES.default: return undefined;
+            default: return undefined;
+        }
     }
 
     /**
@@ -416,15 +448,84 @@ Hooks.once('ready', () => {
     console.log(`${VSpellPoints.ID} | Initializing module`)
     VSpellPoints.initialize();
 
+    // add a button to the top of the sheet that opens a dialog to enable/disable spellpoints per sheet
+    // TODO: comments
+    Hooks.on("getActorSheetHeaderButtons", (actorsheetCharacter, items) => {
+        VSpellPoints.log("Add spellpoint button to header")
+        VSpellPoints.log("RENDER", actorsheetCharacter, items)
+
+        // disable for not trusted players
+        if (!game.user.isTrusted && !game.user.isGM) return;
+
+        let actor = actorsheetCharacter.object;
+
+        // prevent execution if it's not a charactersheet
+        if (!VSpellPointsData.isCharacter(actor)) return;
+
+        function handleVariantChoice(choice, actor) {
+            VSpellPoints.log("CLICKED ON UPDATE SHEET")
+            VSpellPoints.log(choice, actor)
+            VSpellPointsData.setPointsEnabled(actor, choice)
+        }
+
+        const spellPointsButton = {
+            label: "",
+            class: "spellpoints",
+            icon: "fas fa-book",
+            onclick: async (event) => {
+                const clickedElement = $(event.currentTarget);
+                const actorID = clickedElement.parents('[id]')?.attr("id")?.replace("actor-", "")
+                const actor = game.actors.get(actorID)
+                const previousChoice = VSpellPointsData.getPointsEnabled(actor)
+                const selectedAttribute = `selected="selected"`
+
+                let spellLvlDialog = new Dialog({
+                    title: "Should spell points be used for this character?",
+                    content: `
+                      Select if spell points should be used for this character.
+                      <form class="flexcol">
+                        <div class="form-group">
+                          <label>Selection:  </label>
+                          <select id="spellSlotVariant">
+                            <option value="${VSpellPoints.STATUSCHOICES.default}" ${previousChoice === VSpellPoints.STATUSCHOICES.default? selectedAttribute : ""}>
+                                default (global setting)
+                            </option>
+                            <option value="${VSpellPoints.STATUSCHOICES.disabled}" ${previousChoice === VSpellPoints.STATUSCHOICES.disabled? selectedAttribute : ""}>
+                                use slots
+                            </option>
+                            <option value="${VSpellPoints.STATUSCHOICES.enabled}" ${previousChoice === VSpellPoints.STATUSCHOICES.enabled? selectedAttribute : ""}>
+                                use points
+                            </option>
+                          </select>
+                        </div>
+                      </form>`,
+                    buttons: {
+                        one: {
+                            icon: '<i class="fas fa-save"></i>',
+                            label: "Update Sheet",
+                            callback: (html) => handleVariantChoice(html.find(`#spellSlotVariant`).val(), actor)
+                        }
+                    },
+                    default: null,
+                    render: html => console.log("Register interactivity in the rendered dialog"),
+                });
+                await spellLvlDialog.render(true);
+            }
+        }
+        items.unshift(spellPointsButton);
+    })
+
+
     // modify actorsheet after its rendered to show the spell points
     Hooks.on("renderActorSheet5e", (actorsheet, html, _options) => {
-        VSpellPoints.log("++++++++++++++++++")
+        VSpellPoints.log("Add spellpoint UI")
         VSpellPoints.log("RENDER", actorsheet, html, _options)
 
-        // prevent execution if variant is disabled
-        if (!VSpellPointsData.moduleEnabled()) return;
-
         let actor = actorsheet.object;
+        // prevent execution if variant is disabled
+        if (VSpellPointsData.moduleManuallyEnabled(actor) === false) return;
+        if (!VSpellPointsData.moduleEnabled() && !VSpellPointsData.moduleManuallyEnabled(actor)) return;
+
         if (!VSpellPointsData.isCharacter(actor)) return;
 
 
@@ -540,7 +641,8 @@ Hooks.once('ready', () => {
 
     Hooks.on("renderLongRestDialog", (dialog, html, options) => {
         // prevent execution if variant is disabled
-        if (!VSpellPointsData.moduleEnabled()) return;
+        if (VSpellPointsData.moduleManuallyEnabled(dialog.actor) === false) return;
+        if (!VSpellPointsData.moduleEnabled() && !VSpellPointsData.moduleManuallyEnabled(dialog.actor)) return;
 
         let text = $(html).find(".dialog-content").children("p").text().replace('spell slots', 'spell points');
         $(html).find(".dialog-content").children("p").text(text);
@@ -549,12 +651,13 @@ Hooks.once('ready', () => {
     // TODO: use localization stuff
     // replace the spell slot reminder in the ability use dialog
     Hooks.on("renderAbilityUseDialog", (dialog, html, object) => {
-        // prevent execution if variant is disabled
-        if (!VSpellPointsData.moduleEnabled()) return;
-
         VSpellPoints.log(dialog, html, object)
         let item = dialog.item
         let actor = item.parent;
+
+        // prevent execution if variant is disabled
+        if (VSpellPointsData.moduleManuallyEnabled(actor) === false) return;
+        if (!VSpellPointsData.moduleEnabled() && !VSpellPointsData.moduleManuallyEnabled(actor)) return;
 
         VSpellPoints.log("Render Ability Use: warlock, spellcaster:", VSpellPointsData.isWarlock(actor), VSpellPointsData.isSpellcaster(actor))
         // filters out npcs, non spellcasters and single-class warlocks
@@ -677,7 +780,7 @@ function override_getRestSpellRecovery (oldRestSpellRecovery) {
         VSpellPoints.log("_getRestSpellRecovery: warlock, spellcaster", VSpellPointsData.isWarlock(this), VSpellPointsData.isSpellcaster(this))
 
         // use normal function if variant usage is disabled, no spells are being recovered, its an NPC or its not a spellcaster
-        if (!VSpellPointsData.moduleEnabled() || !recoverSpells || !VSpellPointsData.isCharacter(this) || !VSpellPointsData.isSpellcaster(this)) {
+        if (VSpellPointsData.moduleManuallyEnabled(this) === false || (!VSpellPointsData.moduleEnabled() && !VSpellPointsData.moduleManuallyEnabled(this)) || !recoverSpells || !VSpellPointsData.isCharacter(this) || !VSpellPointsData.isSpellcaster(this)) {
             return oldRestSpellRecovery.apply(this, arguments);
         }
 
@@ -726,7 +829,7 @@ function override_getUsageUpdates(oldUsageUpdate) {
         // use normal function if variant is disabled or because of other factors
         // do default behaviour if no spell level is used or module is deactivated
         VSpellPoints.log("_getUsageUpdates: warlock, spellcaster:", VSpellPointsData.isWarlock(actor), VSpellPointsData.isSpellcaster(actor))
-        if (!isResource && (!VSpellPointsData.moduleEnabled() || !consumeSpellLevel || !VSpellPointsData.isCharacter(actor) || !VSpellPointsData.isSpellcaster(actor))) {
+        if (VSpellPointsData.moduleManuallyEnabled(actor) === false || !isResource && ( (!VSpellPointsData.moduleEnabled() && !VSpellPointsData.moduleManuallyEnabled(actor)) || !consumeSpellLevel || !VSpellPointsData.isCharacter(actor) || !VSpellPointsData.isSpellcaster(actor))) {
             VSpellPoints.log("Spell points not affected")
             return oldUsageUpdate.apply(this, arguments);
         }
