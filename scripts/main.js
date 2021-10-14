@@ -507,7 +507,7 @@ Hooks.once('ready', () => {
                         }
                     },
                     default: null,
-                    render: html => console.log("Register interactivity in the rendered dialog"),
+                    render: html => VSpellPoints.log("Register interactivity in the rendered dialog"),
                 });
                 await spellLvlDialog.render(true);
             }
