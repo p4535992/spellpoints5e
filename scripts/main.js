@@ -156,7 +156,7 @@ class VSpellPointsData {
 
         let isNotPresent = !actorResources || (actorResources && foundry.utils.isObjectEmpty(actorResources))
 
-        let [points, level] = [666, 75]
+        let [points, level] = VSpellPointsCalcs.getMaxSpellPointsAndLevel(actor.data.data.classes)
 
         /** @type Resource */
         let updateResources;
