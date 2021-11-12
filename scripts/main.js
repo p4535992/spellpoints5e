@@ -228,6 +228,14 @@ class VSpellPointsData {
     static setPointsEnabled(actor, enable) {
         return actor.setFlag(VSpellPoints.ID, VSpellPoints.FLAGS.ENABLED, enable);
     }
+    
+    static setCustomPointsValue(actor, customSpellPointCount) {
+        return actor.setFlag(VSpellPoints.ID, VSpellPoints.FLAGS.CUSTOMPOINTVALUE, customPointValue);
+    }
+    
+    static getCustomPointsValue(actor) {
+        return actor.getFlag(VSpellPoints.ID, VSpellPoints.FLAGS.CUSTOMPOINTVALUE);
+    }
 
 
     // check if actor is a player character
