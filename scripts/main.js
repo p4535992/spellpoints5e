@@ -7,7 +7,8 @@ class VSpellPoints {
         POINTS: 'points', // legacy
         USES: 'uses', // legacy
         RESOURCES: 'resources',
-        ENABLED: 'enabled'
+        ENABLED: 'enabled',
+        CUSTOMPOINTVALUE: 'custompointvalue'
     }
 
     static STATUSCHOICES = {
@@ -227,10 +228,7 @@ class VSpellPointsData {
     static setPointsEnabled(actor, enable) {
         return actor.setFlag(VSpellPoints.ID, VSpellPoints.FLAGS.ENABLED, enable);
     }
-    
-    static getCustomPoints(actor) {
-        return actor.
-    }
+
 
     // check if actor is a player character
     static isCharacter(actor) {
@@ -493,6 +491,7 @@ Hooks.once('ready', () => {
                 const actor = game.actors.get(actorID)
                 const previousChoice = VSpellPointsData.getPointsEnabled(actor)
                 const selectedAttribute = `selected="selected"`
+                
 
                 let spellLvlDialog = new Dialog({
                     title: "Should spell points be used for this character?",
