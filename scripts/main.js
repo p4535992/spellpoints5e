@@ -501,7 +501,7 @@ Hooks.once('ready', () => {
                 const actor = game.actors.get(actorID)
                 const previousChoice = VSpellPointsData.getPointsEnabled(actor)
                 const selectedAttribute = `selected="selected"`
-                const spellPointCustomValue =
+                const spellPointCustomValue = VSpellPointsData.getCustomPointsValue(actor)
 
                 let spellLvlDialog = new Dialog({
                     title: "Should spell points be used for this character?",
@@ -525,7 +525,7 @@ Hooks.once('ready', () => {
                         
                         <div class="form-group">
                             <label>Custom Point Value</label>
-                            <input type="number" id="customSpellPointCount" min="0" max="999" size="3" value="${customPointValue}">
+                            <input type="number" id="customSpellPointCount" min="0" max="999" size="3" value="${spellPointCustomValue}">
                             <p class="notes">Set the max point count</p>
                         </div>
                                         
