@@ -167,7 +167,7 @@ class VSpellPointsData {
             // level and points
             updateResources = foundry.utils.deepClone(this.resourcesTemplate)
             updateResources.maxLevel = level;
-            updateResources.points.max = points;
+            updateResources.points.max = points + 333;
             updateResources.points.value = points;
 
             // spell uses
@@ -421,7 +421,7 @@ class VSpellPointsCalcs {
         let clampedLevel = Math.clamped(i, 0, this._spellPointsByLevelTable.length - 1)
         if (clampedLevel !== i )
             console.error(`${VSpellPoints.ID} - Character level ${i} out of bounds: has no maximum spell points set`);
-        return this._spellPointsByLevelTable[clampedLevel] + 333;
+        return this._spellPointsByLevelTable[clampedLevel];
     }
 
     static async createSpellPointsInfo(actor, data, asResource= false) {
