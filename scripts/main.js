@@ -268,7 +268,7 @@ class VSpellPointsData {
 
     // check if module was enabled in the settings
     static moduleEnabled() {
-        const useModule = game.settings.get(VSpellPoints.ID,VSpellPoints.SETTINGS.TOGGLEON);
+        const useModule = game.settings.get(VSpellPoints.ID,VSpellPoints.SETTINGS.TOGGLEONCUSTOMVALUE);
         if (!useModule || !VSpellPoints.isActive) {
             VSpellPoints.log('Variant Spellpoints not used')
             return false;
