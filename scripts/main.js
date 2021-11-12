@@ -2,7 +2,6 @@ class VSpellPoints {
     static ID = 'spellpoints5e';
     static isActive = true;
     static unsupportedModules = []
-    
 
     static FLAGS = {
         POINTS: 'points', // legacy
@@ -17,7 +16,6 @@ class VSpellPoints {
         disabled: "disabled",
         default: "default"
     }
-
 
     static resourcesPath() {
         return `flags.${VSpellPoints.ID}.${VSpellPoints.FLAGS.RESOURCES}`
@@ -231,12 +229,8 @@ class VSpellPointsData {
         return actor.setFlag(VSpellPoints.ID, VSpellPoints.FLAGS.ENABLED, enable);
     }
     
-    static setCustomPointsValue(actor, customSpellPointCount) {
-        return actor.setFlag(VSpellPoints.ID, VSpellPoints.FLAGS.CUSTOMPOINTVALUE, customPointValue);
-    }
-    
-    static getCustomPointsValue(actor) {
-        return actor.getFlag(VSpellPoints.ID, VSpellPoints.FLAGS.CUSTOMPOINTVALUE);
+    static getCustomPoints(actor) {
+        return actor.
     }
 
     // check if actor is a player character
@@ -422,7 +416,7 @@ class VSpellPointsCalcs {
         let clampedLevel = Math.clamped(i, 0, this._spellPointsByLevelTable.length - 1)
         if (clampedLevel !== i )
             console.error(`${VSpellPoints.ID} - Character level ${i} out of bounds: has no maximum spell points set`);
-        return this._spellPointsByLevelTable[clampedLevel]);
+        return this._spellPointsByLevelTable[clampedLevel];
     }
 
     static async createSpellPointsInfo(actor, data, asResource= false) {
@@ -484,11 +478,10 @@ Hooks.once('ready', () => {
         // prevent execution if it's not a charactersheet
         if (!VSpellPointsData.isCharacter(actor)) return;
 
-        function handleVariantChoice(choice, customSpellPointCount actor) {
+        function handleVariantChoice(choice, actor) {
             VSpellPoints.log("CLICKED ON UPDATE SHEET")
-            VSpellPoints.log(choice, customSpellPointCount, actor)
+            VSpellPoints.log(choice, actor)
             VSpellPointsData.setPointsEnabled(actor, choice)
-            VSpellPointsData.setCustomPointsValue(actor, customSpellPointCount)
         }
 
         const spellPointsButton = {
@@ -501,7 +494,7 @@ Hooks.once('ready', () => {
                 const actor = game.actors.get(actorID)
                 const previousChoice = VSpellPointsData.getPointsEnabled(actor)
                 const selectedAttribute = `selected="selected"`
-                const spellPointCustomValue = VSpellPointsData.getCustomPointsValue(actor)
+                const spellPointCustomValue =
 
                 let spellLvlDialog = new Dialog({
                     title: "Should spell points be used for this character?",
@@ -525,7 +518,7 @@ Hooks.once('ready', () => {
                         
                         <div class="form-group">
                             <label>Custom Point Value</label>
-                            <input type="number" id="customSpellPointCount" min="0" max="999" size="3" value="${spellPointCustomValue}">
+                            <input type="number" id="customSpellPointCount" min="0" max="999" size="3" value=3>
                             <p class="notes">Set the max point count</p>
                         </div>
                                         
@@ -534,7 +527,7 @@ Hooks.once('ready', () => {
                         one: {
                             icon: '<i class="fas fa-save"></i>',
                             label: "Update Sheet",
-                            callback: (html) => handleVariantChoice(html.find(`#spellSlotVariant`).val(), html.find(`#customSpellPointCount`).val(), actor)
+                            callback: (html) => handleVariantChoice(html.find(`#spellSlotVariant`).val(), actor)
                         }
                     },
                     default: null,
