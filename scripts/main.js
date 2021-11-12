@@ -158,7 +158,7 @@ class VSpellPointsData {
 
         let isNotPresent = !actorResources || (actorResources && foundry.utils.isObjectEmpty(actorResources))
 
-        let [points, level] = VSpellPointsCalcs.getMaxSpellPointsAndLevel(actor.data.data.classes, actor)
+        let [points, level] = VSpellPointsCalcs.getMaxSpellPointsAndLevel(actor.data.data.classes)
 
         /** @type Resource */
         let updateResources;
@@ -375,9 +375,9 @@ class VSpellPointsCalcs {
         return [Object.values(allCastingLevels).reduce((a, b) => a + b, 0), allCastingLevels];
     }
 
-    static getMaxSpellPointsAndLevel(classes, actor) {
+    static getMaxSpellPointsAndLevel(classes) {
         let [spellCastingLevel, _] = this.getCombinedSpellCastingLevel(classes);
-        return this.getSpellpointsByLevel(spellCastingLevel, actor);
+        return this.getSpellpointsByLevel(spellCastingLevel);
     }
 
     // point cost by spell level (starting with level 0 = cantrips)
@@ -418,11 +418,11 @@ class VSpellPointsCalcs {
         [123, 9],
         [133, 9]
     ];
-    static getSpellpointsByLevel(i, actor) {
+    static getSpellpointsByLevel(i) {
         let clampedLevel = Math.clamped(i, 0, this._spellPointsByLevelTable.length - 1)
         if (clampedLevel !== i )
             console.error(`${VSpellPoints.ID} - Character level ${i} out of bounds: has no maximum spell points set`);
-        return (this._spellPointsByLevelTable[clampedLevel] + getCustomPointsValue(actor));
+        return this._spellPointsByLevelTable[clampedLevel]);
     }
 
     static async createSpellPointsInfo(actor, data, asResource= false) {
