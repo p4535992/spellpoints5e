@@ -7,8 +7,7 @@ class VSpellPoints {
         POINTS: 'points', // legacy
         USES: 'uses', // legacy
         RESOURCES: 'resources',
-        ENABLED: 'enabled',
-        CUSTOMPOINTVALUE: 'custompointvalue'
+        ENABLED: 'enabled'
     }
 
     static STATUSCHOICES = {
