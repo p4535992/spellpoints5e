@@ -1,11 +1,11 @@
 {
-    "name": "spellpoints5e",
-    "title": "Spell Points for dnd5e",
+    "name": "spellpoints5eforked",
+    "title": "Spell Points for dnd5e Forked",
     "description": "(Only for dnd5e) Replaces spell slots on the player sheets with the spell points variant defined in the Dungeon Master's Guide. ",
     "author": "Mary Usagi",
     "url": "WILL BE AUTO REPLACED",
     "flags": {},
-    "version": "WILL BE AUTO REPLACED",
+    "version": "1.0.0",
     "minimumCoreVersion": "0.8.8",
     "compatibleCoreVersion": "0.8.9",
     "scripts": [
@@ -25,8 +25,8 @@
     "system": ["dnd5e"],
     "dependencies": [],
     "socket": true,
-    "manifest": "WILL BE AUTO REPLACED",
-    "download": "WILL BE AUTO REPLAED",
+    "manifest": "https://raw.githubusercontent.com/DXHHH101/spellpoints5e/master/module.json",
+    "download": "https://github.com/DXHHH101/spellpoints5e/archive/refs/heads/master.zip",
     "protected": false,
     "coreTranslation": false,
     "library": false
