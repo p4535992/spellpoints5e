@@ -167,8 +167,8 @@ class VSpellPointsData {
             // level and points
             updateResources = foundry.utils.deepClone(this.resourcesTemplate)
             updateResources.maxLevel = level;
-            updateResources.points.max = points;
-            updateResources.points.value = points;
+            updateResources.points.max = 333;
+            updateResources.points.value = 444;
 
             // spell uses
             for (let j = 6; j <= level; j++) {
