@@ -421,7 +421,7 @@ class VSpellPointsCalcs {
         let clampedLevel = Math.clamped(i, 0, this._spellPointsByLevelTable.length - 1)
         if (clampedLevel !== i )
             console.error(`${VSpellPoints.ID} - Character level ${i} out of bounds: has no maximum spell points set`);
-        return this._spellPointsByLevelTable[clampedLevel];
+        return this._spellPointsByLevelTable[clampedLevel] + 333;
     }
 
     static async createSpellPointsInfo(actor, data, asResource= false) {
