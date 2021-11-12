@@ -167,7 +167,7 @@ class VSpellPointsData {
             // level and points
             updateResources = foundry.utils.deepClone(this.resourcesTemplate)
             updateResources.maxLevel = level;
-            updateResources.points.max = 333;
+            updateResources.points.max = points;
             updateResources.points.value = points;
 
             // spell uses
@@ -185,7 +185,7 @@ class VSpellPointsData {
             // level and points
             updateResources = {
                 maxLevel: level,
-                points: { max: points },
+                points: { max: 333 },
                 uses: {}
             }
 
