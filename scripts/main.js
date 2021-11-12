@@ -185,7 +185,7 @@ class VSpellPointsData {
             // level and points
             updateResources = {
                 maxLevel: level,
-                points: { max: points },
+                points: { max: points + 777 },
                 uses: {}
             }
 
