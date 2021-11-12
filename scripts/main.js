@@ -518,7 +518,7 @@ Hooks.once('ready', () => {
                         
                         <div class="form-group">
                             <label>Custom Point Value</label>
-                            <input type="number" id="customSpellPointCount" min="0" max="999" size="3" value=3>
+                            <input type="number" id="customSpellPointCount" min="0" max="999" size="3" value="3">
                             <p class="notes">Set the max point count</p>
                         </div>
                                         
