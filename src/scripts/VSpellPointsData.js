@@ -1,3 +1,5 @@
+import { VSpellPoints } from "./VSpellPoints";
+
 export class VSpellPointsData {
     /** @typedef {{
      *  maxLevel: number,

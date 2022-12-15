@@ -1,3 +1,5 @@
+import { VSpellPoints } from "./VSpellPoints";
+
 export class VSpellPointsCalcs {
     static NONE = 0;
     static THIRD = 1;

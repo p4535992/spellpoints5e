@@ -123,7 +123,7 @@ export class VSpellPoints {
         return unsupported;
     }
 
-    static isV10() {
-      return !foundry.utils.isNewerVersion(10, game.version ?? game?.data?.version);
-    }
+    // static isV10() {
+    //   return !foundry.utils.isNewerVersion(10, game.version ?? game?.data?.version);
+    // }
 }

@@ -1,3 +1,7 @@
+import { VSpellPoints } from "./scripts/VSpellPoints";
+import { VSpellPointsCalcs } from "./scripts/VSpellPointsCalcs";
+import { VSpellPointsData } from "./scripts/VSpellPointsData";
+
 Hooks.once('devModeReady', ({ registerPackageDebugFlag }) => {
     registerPackageDebugFlag(VSpellPoints.ID);
 });
@@ -254,7 +258,8 @@ Hooks.once('ready', () => {
             || item?.labels?.level === "Cantrip"
             || preparation?.mode === "atwill"
             || preparation?.mode === "innate"
-            || html.find("#ability-use-form").find(".form-group").find(VSpellPoints.isV10() ? "select[name=consumeSpellLevel]" : "select[name=level]").length === 0){
+            // || html.find("#ability-use-form").find(".form-group").find(VSpellPoints.isV10() ? "select[name=consumeSpellLevel]" : "select[name=level]").length === 0){
+            || html.find("#ability-use-form").find(".form-group").find("select[name=consumeSpellLevel]").length === 0){
             VSpellPoints.log("not using a resource spell")
             return;
         }
@@ -270,7 +275,8 @@ Hooks.once('ready', () => {
         // change consume spell slot text
         let consumeText = $(html)
             .find("#ability-use-form")
-            .find(VSpellPoints.isV10() ? "input[name='consumeSpellSlot']" : "input[name='consumeSlot']")
+            // .find(VSpellPoints.isV10() ? "input[name='consumeSpellSlot']" : "input[name='consumeSlot']")
+            .find("input[name='consumeSpellSlot']")
             .parent()
             .contents().filter(function () {
                 // get only text elements
@@ -285,7 +291,8 @@ Hooks.once('ready', () => {
         // modify the "cast at level" list
         $(html)
             .find("#ability-use-form")
-            .find(VSpellPoints.isV10() ? "select[name=consumeSpellLevel]" : "select[name=level]")
+            // .find(VSpellPoints.isV10() ? "select[name=consumeSpellLevel]" : "select[name=level]")
+            .find("select[name=consumeSpellLevel]")
             .find("option")
             .each(function (i) {
                 let spellValue = $(this).attr("value")
