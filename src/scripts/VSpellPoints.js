@@ -1,3 +1,5 @@
+import { registerSettings } from "./settings";
+
 export class VSpellPoints {
 	static ID = "spellpoints5e";
 	static isActive = true;
@@ -71,35 +73,7 @@ export class VSpellPoints {
 			this.isActive = false;
 		}
 
-		// Register a world setting
-		game.settings.register(this.ID, this.SETTINGS.TOGGLEON, {
-			name: "Use Variant: Spell Points? ",
-			hint: `Use Spell Points instead of Slots, as described in the Dungeon Master's Guide. Replaces parts of the "spell book" in the character sheet. `,
-			scope: "world", // This specifies a world-level setting
-			config: true, // This specifies that the setting appears in the configuration view
-			default: false, // The default value for the setting
-			type: Boolean,
-		});
-
-		// Register a client setting
-		game.settings.register(this.ID, this.SETTINGS.DISPLAY, {
-			name: "Where to display Spell Points:",
-			hint: `Select where on the character sheet the current spell point value should be shown. `,
-			scope: "world", // This specifies a world-level setting
-			config: true, // This specifies that the setting appears in the configuration view
-			default: "Header", // The default value for the setting
-			choices: Object.values(this.DISPLAY_CHOICE),
-		});
-
-		// Register a world setting
-		game.settings.register(this.ID, this.SETTINGS.TOGGLEONCUSTOMVALUE, {
-			name: "Allow Custom Spell Point Maximum?",
-			hint: `Use Stuff`,
-			scope: "world", // This specifies a world-level setting
-			config: true, // This specifies that the setting appears in the configuration view
-			default: false, // The default value for the setting
-			type: Boolean,
-		});
+		registerSettings();
 	}
 
 	/* https://github.com/League-of-Foundry-Developers/foundryvtt-devMode */
