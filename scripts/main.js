@@ -854,12 +854,15 @@ function override_getUsageUpdates(oldUsageUpdate) {
     return function ({consumeQuantity, consumeRecharge, consumeResource, consumeSpellLevel, consumeUsage, ...args}) {
         let actor = this.parent;
 
+        consumeSpellSlot = args.consumeSlot || args.consumeSpellSlot;
+
         VSpellPoints.log("_getUsageUpdates", {
             consumeQuantity,
             consumeRecharge,
             consumeResource,
             consumeSpellLevel,
-            consumeUsage
+            consumeUsage,
+            consumeSpellSlot
         }, this)
 
         /* consume Resource on non-spells. TODO: will maybe be changed in the future */
@@ -896,7 +899,9 @@ function override_getUsageUpdates(oldUsageUpdate) {
             consumeRecharge,
             consumeResource,
             consumeSpellLevel,
-            consumeUsage
+            consumeUsage,
+            consumeSlot: consumeSpellSlot, // <V10
+            consumeSpellSlot: false // V10; we never want to consume the slot when using spell points
         }]);
 
         VSpellPoints.log(oldUpdate)
@@ -938,14 +943,25 @@ function override_getUsageUpdates(oldUsageUpdate) {
             spellLevel = parseInt("" + spellLevelStr?.replace("spell", "")) || 0
 
             // get point cost of spell level
-            spellCost = VSpellPointsCalcs.getSpellPointCost(spellLevel)
-            VSpellPoints.log("spelllevel: " + spellLevel, "spellCost: " + spellCost, "currentPoint: " + actorResources?.points?.value, "maxSpellLevel: " + actorResources?.maxLevel)
-            if (spellLevel >= usesSpellLevel) VSpellPoints.log(`usesRemaining-${spellLevelStr}: ` + actorResources?.uses[spellLevelStr]?.value ?? 0)
+            if (consumeSpellSlot)
+            {
+                spellCost = VSpellPointsCalcs.getSpellPointCost(spellLevel);
+                VSpellPoints.log("spelllevel: " + spellLevel, "spellCost: " + spellCost, "currentPoint: " + actorResources?.points?.value, "maxSpellLevel: " + actorResources?.maxLevel)
+                if (spellLevel >= usesSpellLevel) VSpellPoints.log(`usesRemaining-${spellLevelStr}: ` + actorResources?.uses[spellLevelStr]?.value ?? 0)
 
-            // error if no or not enough spell points are left, or if level is too high, or if uses remaining
-            currentNotOk = !spellCost || !actorResources?.points?.value || actorResources?.points?.value < spellCost
-            spellLevelNotOk = !spellLevel || !actorResources?.maxLevel || spellLevel > actorResources?.maxLevel;
-            noUsesRemaining = spellLevel >= usesSpellLevel ? actorResources?.uses[spellLevelStr]?.value === 0 : false
+                // error if no or not enough spell points are left, or if level is too high, or if uses remaining
+                currentNotOk = !spellCost || !actorResources?.points?.value || actorResources?.points?.value < spellCost
+                spellLevelNotOk = !spellLevel || !actorResources?.maxLevel || spellLevel > actorResources?.maxLevel;
+                noUsesRemaining = spellLevel >= usesSpellLevel ? actorResources?.uses[spellLevelStr]?.value === 0 : false
+            }
+            else
+            {
+                spellCost = 0; // Don't consume spell points
+                spellLevel = 0; // Don't consume 'uses' either
+                currentNotOk = false;
+                spellLevelNotOk = false;
+                noUsesRemaining = false;
+            }
         }
 
         VSpellPoints.log(`Enough points: ${!currentNotOk}, level ok: ${!spellLevelNotOk}, uses ok: ${!noUsesRemaining}`)
