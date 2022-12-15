@@ -22,6 +22,7 @@ class VSpellPoints {
     }
 
     static CUSTOM_SHEETS = {
+      DEFAULT: "ActorSheet5eCharacter",
       TIDY5E: "Tidy5eSheet"
     }
 
@@ -51,8 +52,17 @@ class VSpellPoints {
 
     static initialize() {
         // load templates
-        delete _templateCache[this.TEMPLATES.ATTRIBUTE];
-        loadTemplates([this.TEMPLATES.ATTRIBUTE]);
+        delete _templateCache[this.TEMPLATES.LEVELS_TOOLTIP];
+        delete _templateCache[this.TEMPLATES.ActorSheet5eCharacter.ATTRIBUTE];
+        delete _templateCache[this.TEMPLATES.ActorSheet5eCharacter.RESOURCE];
+        delete _templateCache[this.TEMPLATES.Tidy5eSheet.ATTRIBUTE];
+        delete _templateCache[this.TEMPLATES.Tidy5eSheet.RESOURCE];
+
+        loadTemplates([this.TEMPLATES.LEVELS_TOOLTIP,
+            this.TEMPLATES.ActorSheet5eCharacter.ATTRIBUTE,
+            this.TEMPLATES.ActorSheet5eCharacter.RESOURCE,
+            this.TEMPLATES.Tidy5eSheet.ATTRIBUTE,
+            this.TEMPLATES.Tidy5eSheet.RESOURCE]);
 
         // disable module if unsupported module is active
         if (this.unsupportedModuleActive()) {
@@ -452,7 +462,7 @@ class VSpellPointsCalcs {
         return this._spellPointsByLevelTable[clampedLevel];
     }
 
-    static async createSpellPointsInfo(actor, data, asResource= false, sheetTheme='ActorSheet5eCharacter') {
+    static async createSpellPointsInfo(actor, data, asResource, sheetTheme) {
         // read from actor
         /** @type Resource */
         let userData = data;
@@ -483,6 +493,10 @@ class VSpellPointsCalcs {
             asResource,
             resourcePath: VSpellPoints.resourcesPath(),
             levelsTooltip
+        }
+
+        if (!VSpellPoints.TEMPLATES.hasOwnProperty(sheetTheme)) {
+          sheetTheme = VSpellPoints.CUSTOM_SHEETS.DEFAULT;
         }
 
         let template = VSpellPoints.TEMPLATES[sheetTheme][asResource ? "RESOURCE" : "ATTRIBUTE"];
