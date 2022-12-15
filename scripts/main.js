@@ -100,6 +100,10 @@ class VSpellPoints {
         })
         return unsupported;
     }
+
+    static isV10() {
+      return !foundry.utils.isNewerVersion(10, game.version ?? game?.data?.version);
+    }
 }
 
 class VSpellPointsData {
@@ -707,11 +711,14 @@ Hooks.once('ready', () => {
         if (!VSpellPointsData.isCharacter(actor) || !VSpellPointsData.isSpellcaster(actor)) return;
 
         // only apply on spells that cost resources
+        let preparation = item?.system?.preparation;
+        if (!preparation) preparation = item?.data?.data?.preparation;
+
         if (item?.data?.type !== "spell"
             || item?.labels?.level === "Cantrip"
-            || item?.data?.data?.preparation?.mode === "atwill"
-            || item?.data?.data?.preparation?.mode === "innate"
-            || html.find("#ability-use-form").find(".form-group").find("select[name=level]").length === 0){
+            || preparation?.mode === "atwill"
+            || preparation?.mode === "innate"
+            || html.find("#ability-use-form").find(".form-group").find(VSpellPoints.isV10() ? "select[name=consumeSpellLevel]" : "select[name=level]").length === 0){
             VSpellPoints.log("not using a resource spell")
             return;
         }
@@ -727,11 +734,11 @@ Hooks.once('ready', () => {
         // change consume spell slot text
         let consumeText = $(html)
             .find("#ability-use-form")
-            .find("input[name='consumeSlot']")
+            .find(VSpellPoints.isV10() ? "input[name='consumeSpellSlot']" : "input[name='consumeSlot']")
             .parent()
             .contents().filter(function () {
                 // get only text elements
-                return this.nodeType === 3;
+                return (this.nodeType === 3 && (this.textContent?.trim().length > 0));
             });
 
         if (VSpellPointsData.isWarlock(actor))
@@ -742,7 +749,7 @@ Hooks.once('ready', () => {
         // modify the "cast at level" list
         $(html)
             .find("#ability-use-form")
-            .find("select[name='level']")
+            .find(VSpellPoints.isV10() ? "select[name=consumeSpellLevel]" : "select[name=level]")
             .find("option")
             .each(function (i) {
                 let spellValue = $(this).attr("value")
