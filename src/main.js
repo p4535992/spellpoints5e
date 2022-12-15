@@ -100,10 +100,16 @@ Hooks.once("ready", () => {
 
 		let actor = actorsheet.object;
 		// prevent execution if variant is disabled
-		if (VSpellPointsData.moduleManuallyEnabled(actor) === false) return;
-		if (!VSpellPointsData.moduleEnabled() && !VSpellPointsData.moduleManuallyEnabled(actor)) return;
+		if (VSpellPointsData.moduleManuallyEnabled(actor) === false) {
+            return;
+        }
+		if (!VSpellPointsData.moduleEnabled() && !VSpellPointsData.moduleManuallyEnabled(actor)) {
+            return;
+        }
 
-		if (!VSpellPointsData.isCharacter(actor)) return;
+		if (!VSpellPointsData.isCharacter(actor)) {
+            return;
+        }
 
 		VSpellPoints.log("render actorsheet", actorsheet, "renderActor: ", foundry.utils.deepClone(actor));
 
@@ -116,8 +122,9 @@ Hooks.once("ready", () => {
 			VSpellPointsData.isWarlock(actor),
 			VSpellPointsData.isSpellcaster(actor)
 		);
-		if (!VSpellPointsData.isSpellcaster(actor)) return;
-
+		if (!VSpellPointsData.isSpellcaster(actor)) {
+            return;
+        }
 		// change header of sheet
 		VSpellPoints.log("It's a caster! - Level " + VSpellPointsCalcs.getCombinedSpellCastingLevel(actor_classes)[0]);
 
@@ -247,9 +254,12 @@ Hooks.once("ready", () => {
 
 	Hooks.on("renderLongRestDialog", (dialog, html, options) => {
 		// prevent execution if variant is disabled
-		if (VSpellPointsData.moduleManuallyEnabled(dialog.actor) === false) return;
-		if (!VSpellPointsData.moduleEnabled() && !VSpellPointsData.moduleManuallyEnabled(dialog.actor)) return;
-
+		if (VSpellPointsData.moduleManuallyEnabled(dialog.actor) === false) {
+            return;
+        }
+		if (!VSpellPointsData.moduleEnabled() && !VSpellPointsData.moduleManuallyEnabled(dialog.actor)) {
+            return;
+        }
 		let text = $(html).find(".dialog-content").children("p").text().replace("spell slots", "spell points");
 		$(html).find(".dialog-content").children("p").text(text);
 	});
@@ -262,17 +272,21 @@ Hooks.once("ready", () => {
 		let actor = item.parent;
 
 		// prevent execution if variant is disabled
-		if (VSpellPointsData.moduleManuallyEnabled(actor) === false) return;
-		if (!VSpellPointsData.moduleEnabled() && !VSpellPointsData.moduleManuallyEnabled(actor)) return;
-
+		if (VSpellPointsData.moduleManuallyEnabled(actor) === false) {
+            return;
+        }
+		if (!VSpellPointsData.moduleEnabled() && !VSpellPointsData.moduleManuallyEnabled(actor)) {
+            return;
+        }
 		VSpellPoints.log(
 			"Render Ability Use: warlock, spellcaster:",
 			VSpellPointsData.isWarlock(actor),
 			VSpellPointsData.isSpellcaster(actor)
 		);
 		// filters out npcs, non spellcasters and single-class warlocks
-		if (!VSpellPointsData.isCharacter(actor) || !VSpellPointsData.isSpellcaster(actor)) return;
-
+		if (!VSpellPointsData.isCharacter(actor) || !VSpellPointsData.isSpellcaster(actor)) {
+            return;
+        }
 		// only apply on spells that cost resources
 		let preparation = item?.system?.preparation;
 		if (!preparation) preparation = item?.data?.data?.preparation;

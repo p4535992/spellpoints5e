@@ -1,4 +1,5 @@
 import { VSpellPoints } from "./VSpellPoints";
+import { VSpellPointsCalcs } from "./VSpellPointsCalcs";
 
 export class VSpellPointsData {
 	/** @typedef {{
