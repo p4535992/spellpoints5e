@@ -27,9 +27,9 @@ class VSpellPoints {
 
     static TEMPLATES = {
       LEVELS_TOOLTIP: `modules/${this.ID}/templates/levels-tooltip.hbs`,
-      ActorSheet5e: {
+      ActorSheet5eCharacter: {
           ATTRIBUTE: `modules/${this.ID}/templates/attribute.hbs`,
-          RESOURCE: `modules/${this.ID}/templates/attributes.hbs`,
+          RESOURCE: `modules/${this.ID}/templates/attribute.hbs`,
       },
       Tidy5eSheet: {
           ATTRIBUTE: `modules/${this.ID}/templates/tidy5e-attribute.hbs`,
@@ -452,7 +452,7 @@ class VSpellPointsCalcs {
         return this._spellPointsByLevelTable[clampedLevel];
     }
 
-    static async createSpellPointsInfo(actor, data, asResource= false, sheetTheme='ActorSheet5e') {
+    static async createSpellPointsInfo(actor, data, asResource= false, sheetTheme='ActorSheet5eCharacter') {
         // read from actor
         /** @type Resource */
         let userData = data;
