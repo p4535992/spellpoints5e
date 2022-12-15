@@ -509,7 +509,7 @@ Hooks.once('ready', () => {
             icon: "fas fa-book",
             onclick: async (event) => {
                 const clickedElement = $(event.currentTarget);
-                const actorID = clickedElement.parents('[id]')?.attr("id")?.replace("actor-", "")
+                const actorID = clickedElement.parents('[id]')?.attr("id")?.split("-").pop()
                 const actor = game.actors.get(actorID)
                 const previousChoice = VSpellPointsData.getPointsEnabled(actor)
                 const selectedAttribute = `selected="selected"`
