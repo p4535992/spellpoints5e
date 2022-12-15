@@ -10,169 +10,190 @@ export const registerSettings = function () {
 	// });
 	// =====================================================================
 
-    // Register a world setting
-    game.settings.register(CONSTANTS.MODULE_NAME, this.SETTINGS.TOGGLEON, {
-        name: "Use Variant: Spell Points? ",
-        hint: `Use Spell Points instead of Slots, as described in the Dungeon Master's Guide. Replaces parts of the "spell book" in the character sheet. `,
-        scope: "world", // This specifies a world-level setting
-        config: true, // This specifies that the setting appears in the configuration view
-        default: false, // The default value for the setting
-        type: Boolean,
-    });
+	// Register a world setting
+	game.settings.register(CONSTANTS.MODULE_NAME, this.SETTINGS.TOGGLEON, {
+		name: "Use Variant: Spell Points? ",
+		hint: `Use Spell Points instead of Slots, as described in the Dungeon Master's Guide. Replaces parts of the "spell book" in the character sheet. `,
+		scope: "world", // This specifies a world-level setting
+		config: true, // This specifies that the setting appears in the configuration view
+		default: false, // The default value for the setting
+		type: Boolean,
+	});
 
-    // Register a client setting
-    game.settings.register(CONSTANTS.MODULE_NAME, this.SETTINGS.DISPLAY, {
-        name: "Where to display Spell Points:",
-        hint: `Select where on the character sheet the current spell point value should be shown. `,
-        scope: "world", // This specifies a world-level setting
-        config: true, // This specifies that the setting appears in the configuration view
-        default: "Header", // The default value for the setting
-        choices: Object.values(this.DISPLAY_CHOICE),
-    });
+	// Register a client setting
+	game.settings.register(CONSTANTS.MODULE_NAME, this.SETTINGS.DISPLAY, {
+		name: "Where to display Spell Points:",
+		hint: `Select where on the character sheet the current spell point value should be shown. `,
+		scope: "world", // This specifies a world-level setting
+		config: true, // This specifies that the setting appears in the configuration view
+		default: "Header", // The default value for the setting
+		choices: Object.values(this.DISPLAY_CHOICE),
+	});
 
-    // Register a world setting
-    game.settings.register(CONSTANTS.MODULE_NAME, this.SETTINGS.TOGGLEONCUSTOMVALUE, {
-        name: "Allow Custom Spell Point Maximum?",
-        hint: `Use Stuff`,
-        scope: "world", // This specifies a world-level setting
-        config: true, // This specifies that the setting appears in the configuration view
-        default: false, // The default value for the setting
-        type: Boolean,
-    });
+	// Register a world setting
+	game.settings.register(CONSTANTS.MODULE_NAME, this.SETTINGS.TOGGLEONCUSTOMVALUE, {
+		name: "Allow Custom Spell Point Maximum?",
+		hint: `Use Stuff`,
+		scope: "world", // This specifies a world-level setting
+		config: true, // This specifies that the setting appears in the configuration view
+		default: false, // The default value for the setting
+		type: Boolean,
+	});
 
-    // ========================================================================
+	// ========================================================================
 
-    game.settings.register(CONSTANTS.MODULE_NAME, `spEnableSpellpoints`, {
+	game.settings.register(CONSTANTS.MODULE_NAME, `spEnableSpellpoints`, {
 		name: `${CONSTANTS.MODULE_NAME}.setting.spEnableSpellpoints.name`,
 		hint: `${CONSTANTS.MODULE_NAME}.setting.spEnableSpellpoints.hint`,
-        scope: "world",
-        config: true,
-        default: false,
-        type: Boolean,
-    });
+		scope: "world",
+		config: true,
+		default: false,
+		type: Boolean,
+	});
 
-    game.settings.register(CONSTANTS.MODULE_NAME, `spResource`, {
+	game.settings.register(CONSTANTS.MODULE_NAME, `spResource`, {
 		name: `${CONSTANTS.MODULE_NAME}.setting.spResource.name`,
 		hint: `${CONSTANTS.MODULE_NAME}.setting.spResource.hint`,
-        scope: "world",
-        config: true,
-        default: 'Spell Points',
-        type: String,
-    });
+		scope: "world",
+		config: true,
+		default: "Spell Points",
+		type: String,
+	});
 
-    game.settings.register(CONSTANTS.MODULE_NAME, `spAutoSpellpoints`, {
+	game.settings.register(CONSTANTS.MODULE_NAME, `spAutoSpellpoints`, {
 		name: `${CONSTANTS.MODULE_NAME}.setting.spAutoSpellpoints.name`,
 		hint: `${CONSTANTS.MODULE_NAME}.setting.spAutoSpellpoints.hint`,
-        scope: "world",
-        config: true,
-        default: false,
-        type: Boolean,
-    });
+		scope: "world",
+		config: true,
+		default: false,
+		type: Boolean,
+	});
 
-    game.settings.register(CONSTANTS.MODULE_NAME, `spFormula`, {
+	game.settings.register(CONSTANTS.MODULE_NAME, `spFormula`, {
 		name: `${CONSTANTS.MODULE_NAME}.setting.spFormula.name`,
 		hint: `${CONSTANTS.MODULE_NAME}.setting.spFormula.hint`,
-        scope: "world",
-        config: true,
-        default: 'DMG',
-        type: String,
-        choices: {
-            "DMG": game.i18n.localize( `${CONSTANTS.MODULE_NAME}.setting.spFormula.choice.DMG`),
-            "CUSTOM": game.i18n.localize( `${CONSTANTS.MODULE_NAME}.setting.spFormula.choice.CUSTOM`),
-            "DMG_CUSTOM": game.i18n.localize( `${CONSTANTS.MODULE_NAME}.setting.spFormula.choice.DMG_CUSTOM`),
-            "AM_CUSTOM": game.i18n.localize( `${CONSTANTS.MODULE_NAME}.setting.spFormula.choice.AM_CUSTOM`),
-        },
-    });
+		scope: "world",
+		config: true,
+		default: "DMG",
+		type: String,
+		choices: {
+			DMG: game.i18n.localize(`${CONSTANTS.MODULE_NAME}.setting.spFormula.choice.DMG`),
+			CUSTOM: game.i18n.localize(`${CONSTANTS.MODULE_NAME}.setting.spFormula.choice.CUSTOM`),
+			DMG_CUSTOM: game.i18n.localize(`${CONSTANTS.MODULE_NAME}.setting.spFormula.choice.DMG_CUSTOM`),
+			AM_CUSTOM: game.i18n.localize(`${CONSTANTS.MODULE_NAME}.setting.spFormula.choice.AM_CUSTOM`),
+		},
+	});
 
-    game.settings.register(CONSTANTS.MODULE_NAME, `warlockUseSp`, {
+	game.settings.register(CONSTANTS.MODULE_NAME, `warlockUseSp`, {
 		name: `${CONSTANTS.MODULE_NAME}.setting.warlockUseSp.name`,
 		hint: `${CONSTANTS.MODULE_NAME}.setting.warlockUseSp.hint`,
-        scope: "world",
-        config: true,
-        default: false,
-        type: Boolean,
-    });
+		scope: "world",
+		config: true,
+		default: false,
+		type: Boolean,
+	});
 
-    game.settings.register(CONSTANTS.MODULE_NAME, `chatMessagePrivate`, {
+	game.settings.register(CONSTANTS.MODULE_NAME, `chatMessagePrivate`, {
 		name: `${CONSTANTS.MODULE_NAME}.setting.chatMessagePrivate.name`,
 		hint: `${CONSTANTS.MODULE_NAME}.setting.chatMessagePrivate.hint`,
-        scope: "world",
-        config: true,
-        default: false,
-        type: Boolean,
-    });
+		scope: "world",
+		config: true,
+		default: false,
+		type: Boolean,
+	});
 
-    game.settings.register(CONSTANTS.MODULE_NAME, `spellPointsByLevel`, {
+	game.settings.register(CONSTANTS.MODULE_NAME, `spellPointsByLevel`, {
 		name: `${CONSTANTS.MODULE_NAME}.setting.spellPointsByLevel.name`,
 		hint: `${CONSTANTS.MODULE_NAME}.setting.spellPointsByLevel.hint`,
-        scope: "world",
-        config: true,
-        default: {1:4,2:6,3:14,4:17,5:27,6:32,7:38,8:44,9:57,10:64,11:73,12:73,13:83,14:83,15:94,16:94,17:107,18:114,19:123,20:133},
-        type: Object,
-    });
+		scope: "world",
+		config: true,
+		default: {
+			1: 4,
+			2: 6,
+			3: 14,
+			4: 17,
+			5: 27,
+			6: 32,
+			7: 38,
+			8: 44,
+			9: 57,
+			10: 64,
+			11: 73,
+			12: 73,
+			13: 83,
+			14: 83,
+			15: 94,
+			16: 94,
+			17: 107,
+			18: 114,
+			19: 123,
+			20: 133,
+		},
+		type: Object,
+	});
 
-    game.settings.register(CONSTANTS.MODULE_NAME, `spellPointsCosts`, {
+	game.settings.register(CONSTANTS.MODULE_NAME, `spellPointsCosts`, {
 		name: `${CONSTANTS.MODULE_NAME}.setting.spellPointsCosts.name`,
 		hint: `${CONSTANTS.MODULE_NAME}.setting.spellPointsCosts.hint`,
-        scope: "world",
-        config: true,
-        default: {1:2,2:3,3:5,4:6,5:7,6:9,7:10,8:11,9:13},
-        type: Object,
-    });
+		scope: "world",
+		config: true,
+		default: { 1: 2, 2: 3, 3: 5, 4: 6, 5: 7, 6: 9, 7: 10, 8: 11, 9: 13 },
+		type: Object,
+	});
 
-    game.settings.register(CONSTANTS.MODULE_NAME, `spEnableVariant`, {
+	game.settings.register(CONSTANTS.MODULE_NAME, `spEnableVariant`, {
 		name: `${CONSTANTS.MODULE_NAME}.setting.spEnableVariant.name`,
 		hint: `${CONSTANTS.MODULE_NAME}.setting.spEnableVariant.hint`,
-        scope: "world",
-        config: true,
-        default: false,
-        type: Boolean,
-    });
+		scope: "world",
+		config: true,
+		default: false,
+		type: Boolean,
+	});
 
-    game.settings.register(CONSTANTS.MODULE_NAME, `spLifeCost`, {
+	game.settings.register(CONSTANTS.MODULE_NAME, `spLifeCost`, {
 		name: `${CONSTANTS.MODULE_NAME}.setting.spLifeCost.name`,
 		hint: `${CONSTANTS.MODULE_NAME}.setting.spLifeCost.hint`,
-        scope: "world",
-        config: true,
-        default: 2,
-        type: Number,
-    });
+		scope: "world",
+		config: true,
+		default: 2,
+		type: Number,
+	});
 
-    game.settings.register(CONSTANTS.MODULE_NAME, `spMixedMode`, {
+	game.settings.register(CONSTANTS.MODULE_NAME, `spMixedMode`, {
 		name: `${CONSTANTS.MODULE_NAME}.setting.spMixedMode.name`,
 		hint: `${CONSTANTS.MODULE_NAME}.setting.spMixedMode.hint`,
-        scope: "world",
-        config: true,
-        default: false,
-        type: Boolean,
-    });
+		scope: "world",
+		config: true,
+		default: false,
+		type: Boolean,
+	});
 
-    game.settings.register(CONSTANTS.MODULE_NAME, `isCustom`, {
+	game.settings.register(CONSTANTS.MODULE_NAME, `isCustom`, {
 		name: `${CONSTANTS.MODULE_NAME}.setting.isCustom.name`,
 		hint: `${CONSTANTS.MODULE_NAME}.setting.isCustom.hint`,
-        scope: "world",
-        config: true,
-        default: false,
-        type: Boolean,
-    });
+		scope: "world",
+		config: true,
+		default: false,
+		type: Boolean,
+	});
 
-    game.settings.register(CONSTANTS.MODULE_NAME, `spCustomFormulaBase`, {
+	game.settings.register(CONSTANTS.MODULE_NAME, `spCustomFormulaBase`, {
 		name: `${CONSTANTS.MODULE_NAME}.setting.spCustomFormulaBase.name`,
 		hint: `${CONSTANTS.MODULE_NAME}.setting.spCustomFormulaBase.hint`,
-        scope: "world",
-        config: true,
-        default: 0,
-        type: Number,
-    });
+		scope: "world",
+		config: true,
+		default: 0,
+		type: Number,
+	});
 
-    game.settings.register(CONSTANTS.MODULE_NAME, `spCustomFormulaSlotMultiplier`, {
+	game.settings.register(CONSTANTS.MODULE_NAME, `spCustomFormulaSlotMultiplier`, {
 		name: `${CONSTANTS.MODULE_NAME}.setting.spCustomFormulaSlotMultiplier.name`,
 		hint: `${CONSTANTS.MODULE_NAME}.setting.spCustomFormulaSlotMultiplier.hint`,
-        scope: "world",
-        config: true,
-        default: 1,
-        type: Number,
-    });
+		scope: "world",
+		config: true,
+		default: 1,
+		type: Number,
+	});
 
 	// ========================================================================
 	game.settings.register(CONSTANTS.MODULE_NAME, "debug", {

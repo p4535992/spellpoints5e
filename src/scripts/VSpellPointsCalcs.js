@@ -79,29 +79,31 @@ export class VSpellPointsCalcs {
 	// TODO: editable
 	// starting with character level 0
 	// [max points, max spell level]
-	static _spellPointsByLevelTable = [
-		[0, 0],
-		[4, 1],
-		[6, 1],
-		[14, 2],
-		[17, 2],
-		[27, 3],
-		[32, 3],
-		[38, 4],
-		[44, 4],
-		[57, 5],
-		[64, 5],
-		[73, 6],
-		[73, 6],
-		[83, 7],
-		[83, 7],
-		[94, 8],
-		[94, 8],
-		[107, 9],
-		[114, 9],
-		[123, 9],
-		[133, 9],
-	];
+	static _spellPointsByLevelTable = VSpellPoints.formulas.DMG.spellPointsByLevel;
+	// static _spellPointsByLevelTable = [
+	// 	[0, 0],
+	// 	[4, 1],
+	// 	[6, 1],
+	// 	[14, 2],
+	// 	[17, 2],
+	// 	[27, 3],
+	// 	[32, 3],
+	// 	[38, 4],
+	// 	[44, 4],
+	// 	[57, 5],
+	// 	[64, 5],
+	// 	[73, 6],
+	// 	[73, 6],
+	// 	[83, 7],
+	// 	[83, 7],
+	// 	[94, 8],
+	// 	[94, 8],
+	// 	[107, 9],
+	// 	[114, 9],
+	// 	[123, 9],
+	// 	[133, 9],
+	// ];
+
 	static getSpellpointsByLevel(i) {
 		let clampedLevel = Math.clamped(i, 0, this._spellPointsByLevelTable.length - 1);
 		if (clampedLevel !== i)
