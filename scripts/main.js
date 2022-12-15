@@ -66,7 +66,7 @@ class VSpellPoints {
             default: 'Header',      // The default value for the setting
             choices: Object.values(this.DISPLAY_CHOICE)
         });
-        
+
         // Register a world setting
         game.settings.register(this.ID, this.SETTINGS.TOGGLEONCUSTOMVALUE, {
             name: "Allow Custom Spell Point Maximum?",
@@ -156,7 +156,9 @@ class VSpellPointsData {
 
         let isNotPresent = !actorResources || (actorResources && foundry.utils.isObjectEmpty(actorResources))
 
-        let [points, level] = VSpellPointsCalcs.getMaxSpellPointsAndLevel(actor.data.data.classes)
+        let actor_classes = actor.classes;
+        if (!actor_classes) actor_classes = actor.data.data.classes;
+        let [points, level] = VSpellPointsCalcs.getMaxSpellPointsAndLevel(actor_classes);
 
         /** @type Resource */
         let updateResources;
@@ -228,11 +230,11 @@ class VSpellPointsData {
     static setPointsEnabled(actor, enable) {
         return actor.setFlag(VSpellPoints.ID, VSpellPoints.FLAGS.ENABLED, enable);
     }
-    
+
     static setCustomPointsValue(actor, customSpellPointCount) {
         return actor.setFlag(VSpellPoints.ID, VSpellPoints.FLAGS.CUSTOMPOINTVALUE, customPointValue);
     }
-    
+
     static getCustomPointsValue(actor) {
         return actor.getFlag(VSpellPoints.ID, VSpellPoints.FLAGS.CUSTOMPOINTVALUE);
     }
@@ -249,13 +251,15 @@ class VSpellPointsData {
 
     // check if actor is spellcasters
     static isSpellcaster(actor) {
-        let classes = actor?.data?.data?.classes;
-        if (!classes) {
+        let actor_classes = actor?.classes;
+        if (!actor_classes) actor_classes = actor?.data?.data?.classes;
+
+        if (!actor_classes) {
             VSpellPoints.log("Actor doesn't have a class")
             return false;
         }
 
-        let isCaster = VSpellPointsCalcs.getCombinedSpellCastingLevel(classes)[0] > 0;
+        let isCaster = VSpellPointsCalcs.getCombinedSpellCastingLevel(actor_classes)[0] > 0;
         if (!isCaster) {
             VSpellPoints.log("Actor is not a spellcaster")
             return false
@@ -265,11 +269,14 @@ class VSpellPointsData {
 
     // check if actor is warlock
     static isWarlock(actor) {
-        if (!(actor?.data?.data?.classes)) {
-            return false
+        let actor_classes = actor?.classes;
+        if (!actor_classes) actor_classes = actor?.data?.data?.classes;
+
+        if (!(actor_classes)) {
+              return false
         }
 
-        if ('warlock' in actor.data.data.classes) {
+        if ('warlock' in actor_classes) {
             VSpellPoints.log("Actor is a Warlock")
             return true;
         }
@@ -369,7 +376,12 @@ class VSpellPointsCalcs {
     static getCombinedSpellCastingLevel (classes) {
         let allCastingLevels = {}
         Object.entries(classes).forEach( ([className, classProps]) =>  {
-            allCastingLevels[className.capitalize()] = this.getSpellCastingLevel(classProps.spellcasting.progression, classProps.levels);
+          let class_levels = classProps.levels;
+          if (!class_levels) class_levels = classProps.data.data.levels;
+
+          let class_progression = classProps.spellcasting?.progression;
+          if (!class_progression) class_progression = classProps.data?.data?.spellcasting?.progression;
+          allCastingLevels[className.capitalize()] = this.getSpellCastingLevel(class_progression, class_levels);
         });
         return [Object.values(allCastingLevels).reduce((a, b) => a + b, 0), allCastingLevels];
     }
@@ -432,8 +444,10 @@ class VSpellPointsCalcs {
 
         let tempMax = userData.points.addMax > 0 ? userData.points.addMax : "";
         let tempPoints = userData.points.temp > 0 ? userData.points.temp : "";
+        let actor_classes = actor.classes;
+        if (!actor_classes) actor_classes = actor.data.data.classes;
 
-        let [combinedLevel, allCastingLevels] = VSpellPointsCalcs.getCombinedSpellCastingLevel(actor.data.data.classes)
+        let [combinedLevel, allCastingLevels] = VSpellPointsCalcs.getCombinedSpellCastingLevel(actor_classes);
 
         // TODO: with localization
         const template_data =  {
@@ -499,7 +513,7 @@ Hooks.once('ready', () => {
                 const actor = game.actors.get(actorID)
                 const previousChoice = VSpellPointsData.getPointsEnabled(actor)
                 const selectedAttribute = `selected="selected"`
-                
+
 
                 let spellLvlDialog = new Dialog({
                     title: "Should spell points be used for this character?",
@@ -520,13 +534,13 @@ Hooks.once('ready', () => {
                             </option>
                           </select>
                         </div>
-                        
+
                         <div class="form-group">
                             <label>Custom Point Value</label>
                             <input type="number" id="customSpellPointCount" min="0" max="999" size="3" value="3">
                             <p class="notes">Set the max point count</p>
                         </div>
-                                        
+
                       </form>`,
                     buttons: {
                         one: {
@@ -568,7 +582,7 @@ Hooks.once('ready', () => {
         if (!VSpellPointsData.isSpellcaster(actor)) return;
 
         // change header of sheet
-        VSpellPoints.log("It's a caster! - Level " + VSpellPointsCalcs.getCombinedSpellCastingLevel(actor.data.data.classes)[0])
+        VSpellPoints.log("It's a caster! - Level " + VSpellPointsCalcs.getCombinedSpellCastingLevel(actor_classes)[0])
         let attributesList = html.find(".sheet-header").find(".attributes")
         let resourcesList = html.find(".sheet-body .center-pane").find("ul.attributes")
         if (resourcesList.length === 0) {
@@ -623,9 +637,9 @@ Hooks.once('ready', () => {
                 else {
                     newUsesInfo = `
                         <div class="spell-uses" title="remaining uses">
-                            (<input type="text" 
-                                    name="${VSpellPoints.resourcesPath()}.uses.${dataLevel}.value" 
-                                    value="${actorResources.uses[dataLevel]?.value ?? 0}" placeholder="0" 
+                            (<input type="text"
+                                    name="${VSpellPoints.resourcesPath()}.uses.${dataLevel}.value"
+                                    value="${actorResources.uses[dataLevel]?.value ?? 0}" placeholder="0"
                                     data-dtype="Number">
                             <span class="sep"> / </span>
                             <span class="spell-max" data-level="${dataLevel}" data-slots="${actorResources.uses[dataLevel].override ?? actorResources.uses[dataLevel].max}">
