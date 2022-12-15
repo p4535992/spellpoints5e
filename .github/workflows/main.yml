@@ -1,75 +1,54 @@
-# This is a basic workflow to help you get started with Actions
-name: Build Release
+name: Release Creation
 
-# Controls when the action will run. 
-on:
-  # Triggers the workflow on push or pull request events but only for the main branch
-  push:
-    tags:
-      - '**'
-  #  branches: [ master ]
-  # pull_request:
-  #  branches: [ main ]
+on: 
+  release:
+    types: [published]
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+    - uses: actions/checkout@v2
 
-      - id: get_version
-        uses: battila7/get-version-action@v2
+    #Substitute the Manifest and Download URLs in the module.json
+    - name: Substitute Manifest and Download Links For Versioned Ones
+      id: sub_manifest_link_version
+      uses: microsoft/variable-substitution@v1
+      with:
+        files: 'src/module.json'
+      env:
+        version: ${{github.event.release.tag_name}}
+        manifest: https://github.com/${{github.repository}}/releases/latest/download/module.json
+        download: https://github.com/${{github.repository}}/releases/download/${{github.event.release.tag_name}}/module.zip
 
-      # Updates fields in the module.json, TODO: replace with a better version
-      - name: Update module.json version
-        uses: jossef/action-set-json-field@v1
-        with:
-          file: module.json
-          field: version
-          value: ${{ steps.get_version.outputs.version-without-v }}
+    # create a zip file with all files required by the module to add to the release
+    - run: cd src; zip -r ./module.zip *
 
-      - name: Update module.json manifest
-        uses: jossef/action-set-json-field@v1
-        with:
-          file: module.json
-          field: manifest
-          value: https://github.com/${{ github.repository }}/releases/latest/download/module.json
+    # Create a release for this specific version
+    - name: Update Release with Files
+      id: create_version_release
+      uses: ncipollo/release-action@v1
+      with:
+        allowUpdates: true # set this to false if you want to prevent updating existing releases
+        name: ${{ github.event.release.name }}
+        draft: false
+        prerelease: false
+        token: ${{ secrets.GITHUB_TOKEN }}
+        artifacts: 'src/module.json, src/module.zip'
+        tag: ${{ github.event.release.tag_name }}
+        body: ${{ github.event.release.body }}
 
-      - name: Update module.json download
-        uses: jossef/action-set-json-field@v1
-        with:
-          file: module.json
-          field: download
-          value: https://github.com/${{ github.repository }}/releases/download/${{ steps.get_version.outputs.version }}/module.zip
-
-      - name: Update module.json url
-        uses: jossef/action-set-json-field@v1
-        with:
-          file: module.json
-          field: url
-          value: https://github.com/${{ github.repository }}/tree/master
-
-      # Create a zip file with all files required by the module to add to the release
-      - name: Zip Files
-        working-directory: ./
-        run: zip -r ./module.zip ./scripts/* ./lang/* ./templates/* ./styles/* ./module.json ./LICENSE ./README.md
-
-      # Create a release for this specific version
-      - name: Create Release
-        id: create-release
-        uses: ncipollo/release-action@v1
-        with:
-          allowUpdates: true
-          omitName: true
-          draft: false
-          prerelease: false
-          token: ${{secrets.GITHUB_TOKEN}}
-          artifacts: "./module.zip, ./module.json"
-          tag: ${{ steps.get_version.outputs.version }}
-          replacesArtifacts: false
+    # Update the 'latest' release
+    - name: Create Release
+      id: create_latest_release
+      uses: ncipollo/release-action@v1
+      if: endsWith(github.ref, 'master')
+      with:
+        allowUpdates: true
+        name: Latest
+        draft: false
+        prerelease: false
+        token: ${{ secrets.GITHUB_TOKEN }}
+        artifacts: 'src/module.json,src/module.zip'
+        tag: latest
+        body: ${{ github.event.release.body }}
