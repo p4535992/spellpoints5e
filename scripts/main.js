@@ -21,8 +21,20 @@ class VSpellPoints {
         return `flags.${VSpellPoints.ID}.${VSpellPoints.FLAGS.RESOURCES}`
     }
 
+    static CUSTOM_SHEETS = {
+      TIDY5E: "Tidy5eSheet"
+    }
+
     static TEMPLATES = {
-        ATTRIBUTE: `modules/${this.ID}/templates/attribute.hbs`
+      LEVELS_TOOLTIP: `modules/${this.ID}/templates/levels-tooltip.hbs`,
+      ActorSheet5e: {
+          ATTRIBUTE: `modules/${this.ID}/templates/attribute.hbs`,
+          RESOURCE: `modules/${this.ID}/templates/attributes.hbs`,
+      },
+      Tidy5eSheet: {
+          ATTRIBUTE: `modules/${this.ID}/templates/tidy5e-attribute.hbs`,
+          RESOURCE: `modules/${this.ID}/templates/tidy5e-resource.hbs`,
+      }
     }
 
     static SETTINGS = {
@@ -440,7 +452,7 @@ class VSpellPointsCalcs {
         return this._spellPointsByLevelTable[clampedLevel];
     }
 
-    static async createSpellPointsInfo(actor, data, asResource= false) {
+    static async createSpellPointsInfo(actor, data, asResource= false, sheetTheme='ActorSheet5e') {
         // read from actor
         /** @type Resource */
         let userData = data;
@@ -452,26 +464,30 @@ class VSpellPointsCalcs {
         if (!actor_classes) actor_classes = actor.data.data.classes;
 
         let [combinedLevel, allCastingLevels] = VSpellPointsCalcs.getCombinedSpellCastingLevel(actor_classes);
+        const levelsTooltipData = {
+            allCastingLevels,
+            combinedLevel
+        }
+
+        let levelsTooltip = asResource ? null : await renderTemplate(VSpellPoints.TEMPLATES.LEVELS_TOOLTIP, levelsTooltipData);
 
         // TODO: with localization
         const template_data =  {
             spellPointsNameText: "Spell Points",
+            spellPointsAbbreviationText: "SP",
             maxSpellPointsTooltip: "Your maximum number of spell points",
             currentSpellpoints: userData.points.value,
             maxSpellPoints: userData.points.max,
-            combinedLevel,
-            allCastingLevels,
+            // combinedLevel,
+            // allCastingLevels,
             asResource,
             resourcePath: VSpellPoints.resourcesPath(),
+            levelsTooltip
         }
-        // TODO: tidy5e
-        let tidy5e = `<div class="resource-value multiple">
-            <input class="res-value" name="flags.spellpoints5e.resources.points.value" type="text" value="" data-dtype="Number" placeholder="0" maxlength="3">
-            <span class="sep">/</span>
-            <input class="res-max" name="flags.spellpoints5e.resources.points.max" type="text" value="" data-dtype="Number" placeholder="0" maxlength="3">
-        </div>`
 
-        let spellPointsInfo = await renderTemplate(VSpellPoints.TEMPLATES.ATTRIBUTE, template_data);
+        let template = VSpellPoints.TEMPLATES[sheetTheme][asResource ? "RESOURCE" : "ATTRIBUTE"];
+
+        let spellPointsInfo = await renderTemplate(template, template_data);
         return spellPointsInfo;
     }
 }
@@ -587,9 +603,22 @@ Hooks.once('ready', () => {
 
         // change header of sheet
         VSpellPoints.log("It's a caster! - Level " + VSpellPointsCalcs.getCombinedSpellCastingLevel(actor_classes)[0])
-        let attributesList = html.find(".sheet-header").find(".attributes")
-        let resourcesList = html.find(".sheet-body .center-pane").find("ul.attributes")
+
+        let sheetTheme = actorsheet.constructor.name;
+        let attributesList;
+        let resourcesList;
+
+        if (sheetTheme === VSpellPoints.CUSTOM_SHEETS.TIDY5E) {
+            VSpellPoints.log("Using Tidy5eSheet");
+            attributesList = html.find(".tidy5e-header").find(".header-attributes");
+            resourcesList = html.find(".sheet-body .center-pane").find("ul.resources");
+        } else {
+            attributesList = html.find(".sheet-header").find(".attributes")
+            resourcesList = html.find(".sheet-body .center-pane").find("ul.attributes")
+        }
+
         if (resourcesList.length === 0) {
+            VSpellPoints.log("Resources list is empty");
             resourcesList = html.find(".sheet-main-wrapper .sheet-main").find("ul.attributes")
         }
 
@@ -601,17 +630,18 @@ Hooks.once('ready', () => {
 
         // create new attribute display in the header or the resource block
         // TODO: shorten this line
-        if (Object.values(VSpellPoints.DISPLAY_CHOICE)[game.settings.get(VSpellPoints.ID,VSpellPoints.SETTINGS.DISPLAY)] === VSpellPoints.DISPLAY_CHOICE.resources) {
-            let spellPointsAttribute = VSpellPointsCalcs.createSpellPointsInfo(actor, actorResources, true);
+        let displayAsResource = Object.values(VSpellPoints.DISPLAY_CHOICE)[game.settings.get(VSpellPoints.ID,VSpellPoints.SETTINGS.DISPLAY)] === VSpellPoints.DISPLAY_CHOICE.resources;
+        let spellPointsAttribute = VSpellPointsCalcs.createSpellPointsInfo(actor, actorResources, displayAsResource, sheetTheme);
+
+        if (displayAsResource) {
             spellPointsAttribute.then((spellPointsInfo) => {
-                let newAttribute = resourcesList.append(spellPointsInfo);
-                actorsheet.activateListeners($(newAttribute).find(".spellpoints"))
+              let newResource = resourcesList.append(spellPointsInfo);
+              actorsheet.activateListeners($(newResource).find(".spellpoints"));
             })
         } else {
-            let spellPointsAttribute = VSpellPointsCalcs.createSpellPointsInfo(actor, actorResources, false);
             spellPointsAttribute.then((spellPointsInfo) => {
-                let newAttribute = attributesList.append(spellPointsInfo);
-                actorsheet.activateListeners($(newAttribute).find(".spellpoints"))
+              let newAttribute = attributesList.append(spellPointsInfo);
+              actorsheet.activateListeners($(newAttribute).find(".spellpoints"))
             })
         }
 

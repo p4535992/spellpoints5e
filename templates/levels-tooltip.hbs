@@ -1,0 +1,18 @@
+<div class="property-attribution tooltip">
+    <table>
+        <thead>Spellcasting Levels: </thead>
+        <tbody>
+        {{#each allCastingLevels}}
+            <tr>
+                <td class="attribution-value {{#if @first }} mode-5 {{ else }} mode-2 {{/if}}">
+                    {{ this }}
+                </td>
+                <td class="attribution-label">{{ @key }}</td>
+            </tr>
+        {{/each }}
+        <tr class="total">
+            <td class="attribution-value">{{ combinedLevel }}</td>
+            <td class="attribution-label">Total</td>
+        </tr>
+        </tbody></table>
+</div>

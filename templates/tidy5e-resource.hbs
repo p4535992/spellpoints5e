@@ -1,0 +1,10 @@
+<li class="resource spellpoints">
+    <h4 class="resource-name">
+        <input type="text" value="{{ spellPointsNameText }}" placeholder="Spell Points" disabled />
+    </h4>
+    <div class="resource-value multiple">
+        <input class="res-value" name="{{ resourcePath }}.points.value" type="text" value="{{ currentSpellpoints }}" data-dtype="Number" placeholder="10" maxlength="3" />
+        <span class="sep">/</span>
+        <input class="res-max" name="{{ resourcePath }}.points.max" type="text" value="{{ maxSpellPoints }}" data-dtype="Number" placeholder="10" maxlength="3" disabled />
+    </div>
+</li>

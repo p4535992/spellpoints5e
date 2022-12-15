@@ -41,7 +41,15 @@
     font-weight: normal;
 }
 
-/* for tidySheet5e... TODO: maybe add it programmatically */
+/*
+ * Tidy5eSheet
+ */
+/* Attributes */
+.tidy5e.sheet.actor .header-attributes .spellpoints:hover .property-attribution {
+  display: block;
+}
+
+/* Spellbook  TODO: maybe add it programmatically */
 .tidy5e.sheet .spellbook-header .spell-level-slots h3.points-variant ,
 .tidy5e.sheet .spellbook-header .spell-level-slots h4.points-variant {
     flex: none !important;

@@ -1,0 +1,12 @@
+<li class="header-attribute spellpoints">
+    <h4 class="attribute-name" title="{{ spellPointsNameText }}">{{ spellPointsAbbreviationText }}</h4>
+    <div class="value">
+        <input name="{{ resourcePath }}.points.value" type="text" value="{{ currentSpellpoints }}" placeholder="10" data-dtype="Number" /> <!-- title="${currentSpellPointsTooltip}" -->
+    </div>
+    <footer class="value-footer" title="{{ maxSpellPointsTooltip }}">
+        <label for="spellpoints5e-max" title="">Max</label>
+        <input id="spellpoints5e-max" class="ini-mod" name="{{ resourcePath }}.points.max"
+            type="text" placeholder="10" data-dtype="Number" value="{{ maxSpellPoints }}" maxlength="3" disabled />
+    </footer>
+    {{{ levelsTooltip }}}
+</li>
