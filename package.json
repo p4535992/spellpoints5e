@@ -1,8 +1,8 @@
 {
-	"name": "scene-transitions",
-	"title": "Scene Transitions",
-	"description": "Create transition between scenes. Or show a Slide from a Journal or Macro for Narration",
-	"version": "0.4.5",
+    "name": "spellpoints5e",
+    "title": "Spell Points for dnd5e",
+    "description": "(Only for dnd5e) Replaces spell slots on the player sheets with the spell points variant defined in the Dungeon Master's Guide.",
+	"version": "2.0.0",
 	"main": "main.js",
 	"scripts": {
 		"publish": "gulp publish --update",
